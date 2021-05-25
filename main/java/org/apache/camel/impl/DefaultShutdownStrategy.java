@@ -189,11 +189,7 @@ public class DefaultShutdownStrategy extends ServiceSupport implements ShutdownS
             Collections.reverse(routesOrdered);
         }
 
-        if (suspendOnly) {
-            LOG.info("Starting to graceful suspend " + routesOrdered.size() + " routes (timeout " + timeout + " " + timeUnit.toString().toLowerCase(Locale.ENGLISH) + ")");
-        } else {
-            LOG.info("Starting to graceful shutdown " + routesOrdered.size() + " routes (timeout " + timeout + " " + timeUnit.toString().toLowerCase(Locale.ENGLISH) + ")");
-        }
+        LOG.info("Starting to graceful shutdown " + routesOrdered.size() + " routes (timeout " + timeout + " " + timeUnit.toString().toLowerCase(Locale.ENGLISH) + ")");
 
         // use another thread to perform the shutdowns so we can support timeout
         timeoutOccurred.set(false);
@@ -239,7 +235,7 @@ public class DefaultShutdownStrategy extends ServiceSupport implements ShutdownS
                     // now the route consumers has been shutdown, then prepare route services for shutdown now (forced)
                     for (RouteStartupOrder order : routes) {
                         for (Service service : order.getServices()) {
-                            prepareShutdown(service, false, true, true, isSuppressLoggingOnTimeout());
+                            prepareShutdown(service, true, true, isSuppressLoggingOnTimeout());
                         }
                     }
                 } else {
@@ -439,14 +435,14 @@ public class DefaultShutdownStrategy extends ServiceSupport implements ShutdownS
     }
 
     /**
-     * Prepares the services for shutdown, by invoking the {@link ShutdownPrepared#prepareShutdown(boolean, boolean)} method
+     * Prepares the services for shutdown, by invoking the {@link ShutdownPrepared#prepareShutdown(boolean)} method
      * on the service if it implement this interface.
      *
      * @param service the service
      * @param forced  whether to force shutdown
      * @param includeChildren whether to prepare the child of the service as well
      */
-    private static void prepareShutdown(Service service, boolean suspendOnly, boolean forced, boolean includeChildren, boolean suppressLogging) {
+    private static void prepareShutdown(Service service, boolean forced, boolean includeChildren, boolean suppressLogging) {
         Set<Service> list;
         if (includeChildren) {
             // include error handlers as we want to prepare them for shutdown as well
@@ -460,7 +456,7 @@ public class DefaultShutdownStrategy extends ServiceSupport implements ShutdownS
             if (child instanceof ShutdownPrepared) {
                 try {
                     LOG.trace("Preparing {} shutdown on {}", forced ? "forced" : "", child);
-                    ((ShutdownPrepared) child).prepareShutdown(suspendOnly, forced);
+                    ((ShutdownPrepared) child).prepareShutdown(forced);
                 } catch (Exception e) {
                     if (suppressLogging) {
                         LOG.trace("Error during prepare shutdown on " + child + ". This exception will be ignored.", e);
@@ -589,7 +585,7 @@ public class DefaultShutdownStrategy extends ServiceSupport implements ShutdownS
                     if (service instanceof Consumer) {
                         continue;
                     }
-                    prepareShutdown(service, suspendOnly, false, true, false);
+                    prepareShutdown(service, false, true, false);
                 }
             }
 
@@ -604,7 +600,13 @@ public class DefaultShutdownStrategy extends ServiceSupport implements ShutdownS
 
                 for (RouteStartupOrder order : routes) {
                     int inflight = context.getInflightRepository().size(order.getRoute().getId());
-                    inflight += getPendingInflightExchanges(order);
+                    for (Consumer consumer : order.getInputs()) {
+                        // include any additional pending exchanges on some consumers which may have internal
+                        // memory queues such as seda
+                        if (consumer instanceof ShutdownAware) {
+                            inflight += ((ShutdownAware) consumer).getPendingExchangesSize();
+                        }
+                    }
                     if (inflight > 0) {
                         String routeId = order.getRoute().getId();
                         routeInflight.put(routeId, inflight);
@@ -652,7 +654,7 @@ public class DefaultShutdownStrategy extends ServiceSupport implements ShutdownS
                     LOG.trace("Route: {} preparing to shutdown.", deferred.getRoute().getId());
                     boolean forced = context.getShutdownStrategy().forceShutdown(consumer);
                     boolean suppress = context.getShutdownStrategy().isSuppressLoggingOnTimeout();
-                    prepareShutdown(consumer, suspendOnly, forced, false, suppress);
+                    prepareShutdown(consumer, forced, false, suppress);
                     LOG.debug("Route: {} preparing to shutdown complete.", deferred.getRoute().getId());
                 }
             }
@@ -674,35 +676,11 @@ public class DefaultShutdownStrategy extends ServiceSupport implements ShutdownS
                 for (Service service : order.getServices()) {
                     boolean forced = context.getShutdownStrategy().forceShutdown(service);
                     boolean suppress = context.getShutdownStrategy().isSuppressLoggingOnTimeout();
-                    prepareShutdown(service, suspendOnly, forced, true, suppress);
+                    prepareShutdown(service, forced, true, suppress);
                 }
             }
         }
 
-    }
-
-    /**
-     * Calculates the total number of inflight exchanges for the given route
-     *
-     * @param order the route
-     * @return number of inflight exchanges
-     */
-    protected static int getPendingInflightExchanges(RouteStartupOrder order) {
-        int inflight = 0;
-
-        // the consumer is the 1st service so we always get the consumer
-        // the child services are EIPs in the routes which may also have pending
-        // inflight exchanges (such as the aggregator)
-        for (Service service : order.getServices()) {
-            Set<Service> children = ServiceHelper.getChildServices(service);
-            for (Service child : children) {
-                if (child instanceof ShutdownAware) {
-                    inflight += ((ShutdownAware) child).getPendingExchangesSize();
-                }
-            }
-        }
-
-        return inflight;
     }
 
     /**

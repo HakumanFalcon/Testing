@@ -31,24 +31,18 @@ import org.apache.camel.Producer;
  */
 public class CamelInvocationHandler extends AbstractCamelInvocationHandler implements InvocationHandler {
     private final MethodInfoCache methodInfoCache;
-    private final boolean binding;
 
-    @Deprecated
     public CamelInvocationHandler(Endpoint endpoint, Producer producer, MethodInfoCache methodInfoCache) {
-        this(endpoint, false, producer, methodInfoCache);
-    }
-
-    public CamelInvocationHandler(Endpoint endpoint, boolean binding, Producer producer, MethodInfoCache methodInfoCache) {
         super(endpoint, producer);
-        this.binding = binding;
         this.methodInfoCache = methodInfoCache;
     }
 
     @Override
     public Object doInvokeProxy(Object proxy, Method method, Object[] args) throws Throwable {
+        BeanInvocation invocation = new BeanInvocation(method, args);
         MethodInfo methodInfo = methodInfoCache.getMethodInfo(method);
         final ExchangePattern pattern = methodInfo != null ? methodInfo.getPattern() : ExchangePattern.InOut;
-        return invokeProxy(method, pattern, args, binding);
+        return invokeWithBody(method, invocation, pattern);
     }
 
 }

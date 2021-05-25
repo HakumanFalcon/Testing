@@ -21,8 +21,6 @@ import java.util.Map;
 
 import org.apache.camel.AsyncCallback;
 import org.apache.camel.AsyncProcessor;
-import org.apache.camel.CamelContext;
-import org.apache.camel.CamelContextAware;
 import org.apache.camel.Exchange;
 import org.apache.camel.Message;
 import org.apache.camel.Route;
@@ -36,7 +34,6 @@ import org.apache.camel.util.AsyncProcessorHelper;
 import org.apache.camel.util.ExchangeHelper;
 import org.apache.camel.util.MessageHelper;
 import org.apache.camel.util.ObjectHelper;
-import org.apache.camel.util.ServiceHelper;
 
 /**
  * A {@link org.apache.camel.Processor} that binds the REST DSL incoming and outgoing messages
@@ -47,7 +44,6 @@ import org.apache.camel.util.ServiceHelper;
  */
 public class RestBindingProcessor extends ServiceSupport implements AsyncProcessor {
 
-    private final CamelContext camelContext;
     private final AsyncProcessor jsonUnmarshal;
     private final AsyncProcessor xmlUnmarshal;
     private final AsyncProcessor jsonMarshal;
@@ -59,13 +55,11 @@ public class RestBindingProcessor extends ServiceSupport implements AsyncProcess
     private final boolean enableCORS;
     private final Map<String, String> corsHeaders;
 
-    public RestBindingProcessor(CamelContext camelContext, DataFormat jsonDataFormat, DataFormat xmlDataFormat,
+    public RestBindingProcessor(DataFormat jsonDataFormat, DataFormat xmlDataFormat,
                                 DataFormat outJsonDataFormat, DataFormat outXmlDataFormat,
                                 String consumes, String produces, String bindingMode,
                                 boolean skipBindingOnErrorCode, boolean enableCORS,
                                 Map<String, String> corsHeaders) {
-
-        this.camelContext = camelContext;
 
         if (jsonDataFormat != null) {
             this.jsonUnmarshal = new UnmarshalProcessor(jsonDataFormat);
@@ -112,8 +106,22 @@ public class RestBindingProcessor extends ServiceSupport implements AsyncProcess
             exchange.addOnCompletion(new RestBindingCORSOnCompletion(corsHeaders));
         }
 
+        if (bindingMode == null || "off".equals(bindingMode)) {
+            // binding is off
+            callback.done(true);
+            return true;
+        }
+
+        // is there any unmarshaller at all
+        if (jsonUnmarshal == null && xmlUnmarshal == null) {
+            callback.done(true);
+            return true;
+        }
+
         boolean isXml = false;
         boolean isJson = false;
+
+        String accept = exchange.getIn().getHeader("Accept", String.class);
 
         String contentType = ExchangeHelper.getContentType(exchange);
         if (contentType != null) {
@@ -137,9 +145,8 @@ public class RestBindingProcessor extends ServiceSupport implements AsyncProcess
             isJson = bindingMode.equals("auto") || bindingMode.contains("json");
         }
 
-        String accept = exchange.getIn().getHeader("Accept", String.class);
-
         String body = null;
+
         if (exchange.getIn().getBody() != null) {
 
            // okay we have a binding mode, so need to check for empty body as that can cause the marshaller to fail
@@ -182,7 +189,7 @@ public class RestBindingProcessor extends ServiceSupport implements AsyncProcess
         }
 
         // we could not bind
-        if (bindingMode == null || "off".equals(bindingMode) || bindingMode.equals("auto")) {
+        if (bindingMode.equals("auto")) {
             // okay for auto we do not mind if we could not bind
             exchange.addOnCompletion(new RestBindingMarshalOnCompletion(exchange.getFromRouteId(), jsonMarshal, xmlMarshal, false, accept));
             callback.done(true);
@@ -205,25 +212,12 @@ public class RestBindingProcessor extends ServiceSupport implements AsyncProcess
 
     @Override
     protected void doStart() throws Exception {
-        // inject CamelContext before starting
-        if (jsonMarshal instanceof CamelContextAware) {
-            ((CamelContextAware) jsonMarshal).setCamelContext(camelContext);
-        }
-        if (jsonUnmarshal instanceof CamelContextAware) {
-            ((CamelContextAware) jsonUnmarshal).setCamelContext(camelContext);
-        }
-        if (xmlMarshal instanceof CamelContextAware) {
-            ((CamelContextAware) xmlMarshal).setCamelContext(camelContext);
-        }
-        if (xmlUnmarshal instanceof CamelContextAware) {
-            ((CamelContextAware) xmlUnmarshal).setCamelContext(camelContext);
-        }
-        ServiceHelper.startServices(jsonMarshal, jsonUnmarshal, xmlMarshal, xmlUnmarshal);
+        // noop
     }
 
     @Override
     protected void doStop() throws Exception {
-        ServiceHelper.stopServices(jsonMarshal, jsonUnmarshal, xmlMarshal, xmlUnmarshal);
+        // noop
     }
 
     /**
@@ -269,6 +263,21 @@ public class RestBindingProcessor extends ServiceSupport implements AsyncProcess
                 }
             }
 
+            if (bindingMode == null || "off".equals(bindingMode)) {
+                // binding is off
+                return;
+            }
+
+            // is there any marshaller at all
+            if (jsonMarshal == null && xmlMarshal == null) {
+                return;
+            }
+
+            // is the body empty
+            if ((exchange.hasOut() && exchange.getOut().getBody() == null) || (!exchange.hasOut() && exchange.getIn().getBody() == null)) {
+                return;
+            }
+
             boolean isXml = false;
             boolean isJson = false;
 
@@ -292,16 +301,14 @@ public class RestBindingProcessor extends ServiceSupport implements AsyncProcess
                 isJson = produces != null && produces.toLowerCase(Locale.ENGLISH).contains("json");
             }
 
-            // only allow xml/json if the binding mode allows that (when off we still want to know if its xml or json)
-            if (bindingMode != null) {
-                isXml &= bindingMode.equals("off") || bindingMode.equals("auto") || bindingMode.contains("xml");
-                isJson &= bindingMode.equals("off") || bindingMode.equals("auto") || bindingMode.contains("json");
+            // only allow xml/json if the binding mode allows that
+            isXml &= bindingMode.equals("auto") || bindingMode.contains("xml");
+            isJson &= bindingMode.equals("auto") || bindingMode.contains("json");
 
-                // if we do not yet know if its xml or json, then use the binding mode to know the mode
-                if (!isJson && !isXml) {
-                    isXml = bindingMode.equals("auto") || bindingMode.contains("xml");
-                    isJson = bindingMode.equals("auto") || bindingMode.contains("json");
-                }
+            // if we do not yet know if its xml or json, then use the binding mode to know the mode
+            if (!isJson && !isXml) {
+                isXml = bindingMode.equals("auto") || bindingMode.contains("xml");
+                isJson = bindingMode.equals("auto") || bindingMode.contains("json");
             }
 
             // in case we have not yet been able to determine if xml or json, then use the same as in the unmarshaller
@@ -313,39 +320,22 @@ public class RestBindingProcessor extends ServiceSupport implements AsyncProcess
             // need to prepare exchange first
             ExchangeHelper.prepareOutToIn(exchange);
 
-            // ensure there is a content type header (even if binding is off)
-            ensureHeaderContentType(produces, isXml, isJson, exchange);
-
-            if (bindingMode == null || "off".equals(bindingMode)) {
-                // binding is off, so no message body binding
-                return;
-            }
-
-            // is there any marshaller at all
-            if (jsonMarshal == null && xmlMarshal == null) {
-                return;
-            }
-
-            // is the body empty
-            if ((exchange.hasOut() && exchange.getOut().getBody() == null) || (!exchange.hasOut() && exchange.getIn().getBody() == null)) {
-                return;
-            }
-
-            String contentType = exchange.getIn().getHeader(Exchange.CONTENT_TYPE, String.class);
-            // need to lower-case so the contains check below can match if using upper case
-            contentType = contentType.toLowerCase(Locale.US);
             try {
                 // favor json over xml
                 if (isJson && jsonMarshal != null) {
-                    // only marshal if its json content type
-                    if (contentType.contains("json")) {
-                        jsonMarshal.process(exchange);
+                    // make sure there is a content-type with json
+                    String type = ExchangeHelper.getContentType(exchange);
+                    if (type == null) {
+                        exchange.getIn().setHeader(Exchange.CONTENT_TYPE, "application/json");
                     }
+                    jsonMarshal.process(exchange);
                 } else if (isXml && xmlMarshal != null) {
-                    // only marshal if its xml content type
-                    if (contentType.contains("xml")) {
-                        xmlMarshal.process(exchange);
+                    // make sure there is a content-type with xml
+                    String type = ExchangeHelper.getContentType(exchange);
+                    if (type == null) {
+                        exchange.getIn().setHeader(Exchange.CONTENT_TYPE, "application/xml");
                     }
+                    xmlMarshal.process(exchange);
                 } else {
                     // we could not bind
                     if (bindingMode.equals("auto")) {
@@ -360,31 +350,6 @@ public class RestBindingProcessor extends ServiceSupport implements AsyncProcess
                 }
             } catch (Throwable e) {
                 exchange.setException(e);
-            }
-        }
-
-        private void ensureHeaderContentType(String contentType, boolean isXml, boolean isJson, Exchange exchange) {
-            // favor given content type
-            if (contentType != null) {
-                String type = ExchangeHelper.getContentType(exchange);
-                if (type == null) {
-                    exchange.getIn().setHeader(Exchange.CONTENT_TYPE, contentType);
-                }
-            }
-
-            // favor json over xml
-            if (isJson) {
-                // make sure there is a content-type with json
-                String type = ExchangeHelper.getContentType(exchange);
-                if (type == null) {
-                    exchange.getIn().setHeader(Exchange.CONTENT_TYPE, "application/json");
-                }
-            } else if (isXml) {
-                // make sure there is a content-type with xml
-                String type = ExchangeHelper.getContentType(exchange);
-                if (type == null) {
-                    exchange.getIn().setHeader(Exchange.CONTENT_TYPE, "application/xml");
-                }
             }
         }
 

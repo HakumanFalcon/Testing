@@ -21,14 +21,12 @@ package org.apache.camel.language.simple.types;
  */
 public enum BinaryOperatorType {
 
-    EQ, EQ_IGNORE, GT, GTE, LT, LTE, NOT_EQ, CONTAINS, NOT_CONTAINS, REGEX, NOT_REGEX,
+    EQ, GT, GTE, LT, LTE, NOT_EQ, CONTAINS, NOT_CONTAINS, REGEX, NOT_REGEX,
     IN, NOT_IN, IS, NOT_IS, RANGE, NOT_RANGE;
 
     public static BinaryOperatorType asOperator(String text) {
         if ("==".equals(text)) {
             return EQ;
-        } else if ("=~".equals(text)) {
-            return EQ_IGNORE;
         } else if (">".equals(text)) {
             return GT;
         } else if (">=".equals(text)) {
@@ -66,8 +64,6 @@ public enum BinaryOperatorType {
     public static String getOperatorText(BinaryOperatorType operator) {
         if (operator == EQ) {
             return "==";
-        } else if (operator == EQ_IGNORE) {
-            return "=~";
         } else if (operator == GT) {
             return ">";
         } else if (operator == GTE) {
@@ -149,8 +145,6 @@ public enum BinaryOperatorType {
      */
     public static ParameterType[] supportedParameterTypes(BinaryOperatorType operator) {
         if (operator == EQ) {
-            return null;
-        } else if (operator == EQ_IGNORE) {
             return null;
         } else if (operator == GT) {
             return null;

@@ -45,7 +45,6 @@ public class ThreadPoolProfileDefinition extends OptionalIdentifiedDefinition<Th
     private String maxPoolSize;
     @XmlAttribute
     private String keepAliveTime;
-    @XmlAttribute
     @XmlJavaTypeAdapter(TimeUnitAdapter.class)
     private TimeUnit timeUnit;
     @XmlAttribute

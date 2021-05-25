@@ -20,7 +20,7 @@
         <from uri="seda:a"/>
         <pipeline>
             <marshal>
-                <bindy type="Csv" classType="org.apache.camel.MyFoo"/>
+                <bindy bindyTyp="Csv" packages="org.apache.camel"/>
             </marshal>
             <to uri="seda:b"/>
         </pipeline>

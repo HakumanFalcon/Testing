@@ -26,7 +26,6 @@ import org.apache.camel.CamelContext;
 import org.apache.camel.Exchange;
 import org.apache.camel.Rejectable;
 import org.apache.camel.ThreadPoolRejectedPolicy;
-import org.apache.camel.spi.IdAware;
 import org.apache.camel.support.ServiceSupport;
 import org.apache.camel.util.AsyncProcessorHelper;
 import org.apache.camel.util.ObjectHelper;
@@ -56,10 +55,9 @@ import org.slf4j.LoggerFactory;
  * will not be free to process a new exchange, as its processing the current exchange.</li>
  * </ul>
  */
-public class ThreadsProcessor extends ServiceSupport implements AsyncProcessor, IdAware {
+public class ThreadsProcessor extends ServiceSupport implements AsyncProcessor {
 
     private static final Logger LOG = LoggerFactory.getLogger(ThreadsProcessor.class);
-    private String id;
     private final CamelContext camelContext;
     private final ExecutorService executorService;
     private volatile boolean shutdownExecutorService;
@@ -172,20 +170,8 @@ public class ThreadsProcessor extends ServiceSupport implements AsyncProcessor, 
         this.rejectedPolicy = rejectedPolicy;
     }
 
-    public ExecutorService getExecutorService() {
-        return executorService;
-    }
-
     public String toString() {
         return "Threads";
-    }
-
-    public String getId() {
-        return id;
-    }
-
-    public void setId(String id) {
-        this.id = id;
     }
 
     protected void doStart() throws Exception {

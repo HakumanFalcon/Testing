@@ -34,7 +34,7 @@ public class ManagedStatisticsLevelRoutesOnlyTest extends ManagementTestSupport 
         CamelContext context = super.createCamelContext();
 
         // only routes
-        context.getManagementStrategy().getManagementAgent().setStatisticsLevel(ManagementStatisticsLevel.RoutesOnly);
+        context.getManagementStrategy().setStatisticsLevel(ManagementStatisticsLevel.RoutesOnly);
         return context;
     }
 

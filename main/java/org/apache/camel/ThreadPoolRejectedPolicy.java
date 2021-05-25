@@ -31,7 +31,7 @@ import javax.xml.bind.annotation.XmlType;
  * Camel will by default use <tt>CallerRuns</tt>.
  */
 @XmlType
-@XmlEnum
+@XmlEnum(String.class)
 public enum ThreadPoolRejectedPolicy {
 
     Abort, CallerRuns, DiscardOldest, Discard;

@@ -25,7 +25,7 @@ import org.apache.camel.spi.Metadata;
 /**
  * For using a custom expression
  */
-@Metadata(label = "language,core", title = "Ref")
+@Metadata(label = "language", title = "Ref")
 @XmlRootElement(name = "ref")
 @XmlAccessorType(XmlAccessType.FIELD)
 public class RefExpression extends ExpressionDefinition {

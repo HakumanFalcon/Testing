@@ -92,7 +92,6 @@ public class SedaComponent extends UriEndpointComponent {
     /**
      * @deprecated use {@link #getOrCreateQueue(SedaEndpoint, Integer, Boolean, BlockingQueueFactory)}
      */
-    @Deprecated
     public synchronized QueueReference getOrCreateQueue(SedaEndpoint endpoint, Integer size, Boolean multipleConsumers) {
         return getOrCreateQueue(endpoint, size, multipleConsumers, null);
     }
@@ -171,7 +170,6 @@ public class SedaComponent extends UriEndpointComponent {
             throw new IllegalArgumentException("The limitConcurrentConsumers flag in set to true. ConcurrentConsumers cannot be set at a value greater than "
                     + maxConcurrentConsumers + " was " + consumers);
         }
-
         // Resolve queue reference
         BlockingQueue<Exchange> queue = resolveAndRemoveReferenceParameter(parameters, "queue", BlockingQueue.class);
         SedaEndpoint answer;
@@ -184,8 +182,6 @@ public class SedaComponent extends UriEndpointComponent {
             answer = createEndpoint(uri, this, queue, consumers);
         }
         answer.configureProperties(parameters);
-        answer.setConcurrentConsumers(consumers);
-        answer.setLimitConcurrentConsumers(limitConcurrentConsumers);
         return answer;
     }
 

@@ -37,11 +37,7 @@ public class DirectVmProducer extends DefaultAsyncProducer {
         // send to consumer
         DirectVmConsumer consumer = endpoint.getComponent().getConsumer(endpoint);
         if (consumer == null) {
-            if (endpoint.isFailIfNoConsumers()) {
-                throw new DirectVmConsumerNotAvailableException("No consumers available on endpoint: " + endpoint, exchange);
-            } else {
-                log.debug("message ignored, no consumers available on endpoint: " + endpoint);
-            }
+            throw new DirectVmConsumerNotAvailableException("No consumers available on endpoint: " + endpoint, exchange);
         } else {
             consumer.getProcessor().process(exchange);
         }
@@ -52,11 +48,7 @@ public class DirectVmProducer extends DefaultAsyncProducer {
         // send to consumer
         DirectVmConsumer consumer = endpoint.getComponent().getConsumer(endpoint);
         if (consumer == null) {
-            if (endpoint.isFailIfNoConsumers()) {
-                exchange.setException(new DirectVmConsumerNotAvailableException("No consumers available on endpoint: " + endpoint, exchange));
-            } else {
-                log.debug("message ignored, no consumers available on endpoint: " + endpoint);
-            }
+            exchange.setException(new DirectVmConsumerNotAvailableException("No consumers available on endpoint: " + endpoint, exchange));
             callback.done(true);
             return true;
         } else {

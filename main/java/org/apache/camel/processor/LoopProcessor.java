@@ -24,7 +24,6 @@ import org.apache.camel.Expression;
 import org.apache.camel.NoTypeConversionAvailableException;
 import org.apache.camel.Processor;
 import org.apache.camel.Traceable;
-import org.apache.camel.spi.IdAware;
 import org.apache.camel.util.ExchangeHelper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -34,10 +33,9 @@ import static org.apache.camel.processor.PipelineHelper.continueProcessing;
 /**
  * The processor which sends messages in a loop.
  */
-public class LoopProcessor extends DelegateAsyncProcessor implements Traceable, IdAware {
+public class LoopProcessor extends DelegateAsyncProcessor implements Traceable {
     private static final Logger LOG = LoggerFactory.getLogger(LoopProcessor.class);
 
-    private String id;
     private final Expression expression;
     private final boolean copy;
 
@@ -183,20 +181,8 @@ public class LoopProcessor extends DelegateAsyncProcessor implements Traceable, 
         return expression;
     }
 
-    public boolean isCopy() {
-        return copy;
-    }
-
     public String getTraceLabel() {
         return "loop[" + expression + "]";
-    }
-
-    public String getId() {
-        return id;
-    }
-
-    public void setId(String id) {
-        this.id = id;
     }
 
     @Override

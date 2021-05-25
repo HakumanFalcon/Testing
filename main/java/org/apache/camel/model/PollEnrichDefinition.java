@@ -23,14 +23,14 @@ import javax.xml.bind.annotation.XmlRootElement;
 import javax.xml.bind.annotation.XmlTransient;
 
 import org.apache.camel.CamelContextAware;
-import org.apache.camel.Expression;
+import org.apache.camel.Endpoint;
 import org.apache.camel.Processor;
-import org.apache.camel.model.language.ExpressionDefinition;
 import org.apache.camel.processor.PollEnricher;
 import org.apache.camel.processor.aggregate.AggregationStrategy;
 import org.apache.camel.processor.aggregate.AggregationStrategyBeanAdapter;
 import org.apache.camel.spi.Metadata;
 import org.apache.camel.spi.RouteContext;
+import org.apache.camel.util.ObjectHelper;
 
 /**
  * Enriches messages with data polled from a secondary resource
@@ -40,7 +40,13 @@ import org.apache.camel.spi.RouteContext;
 @Metadata(label = "eip,transformation")
 @XmlRootElement(name = "pollEnrich")
 @XmlAccessorType(XmlAccessType.FIELD)
-public class PollEnrichDefinition extends NoOutputExpressionNode {
+public class PollEnrichDefinition extends NoOutputDefinition<PollEnrichDefinition> implements EndpointRequiredDefinition {
+    @XmlAttribute(name = "uri")
+    private String resourceUri;
+    // TODO: For Camel 3.0 we should remove this ref attribute as you can do that in the uri, by prefixing with ref:
+    @XmlAttribute(name = "ref")
+    @Deprecated
+    private String resourceRef;
     @XmlAttribute @Metadata(defaultValue = "-1")
     private Long timeout;
     @XmlAttribute(name = "strategyRef")
@@ -53,38 +59,60 @@ public class PollEnrichDefinition extends NoOutputExpressionNode {
     private Boolean aggregateOnException;
     @XmlTransient
     private AggregationStrategy aggregationStrategy;
-    @XmlAttribute
-    private Integer cacheSize;
-    @XmlAttribute
-    private Boolean ignoreInvalidEndpoint;
 
     public PollEnrichDefinition() {
     }
 
-    public PollEnrichDefinition(AggregationStrategy aggregationStrategy, long timeout) {
+    public PollEnrichDefinition(AggregationStrategy aggregationStrategy, String resourceUri, long timeout) {
         this.aggregationStrategy = aggregationStrategy;
+        this.resourceUri = resourceUri;
         this.timeout = timeout;
     }
 
     @Override
     public String toString() {
-        return "PollEnrich[" + getExpression() + "]";
+        return "PollEnrich[" + description() + " " + aggregationStrategy + "]";
     }
     
+    protected String description() {
+        return FromDefinition.description(getResourceUri(), getResourceRef(), (Endpoint) null);
+    }
+
     @Override
     public String getLabel() {
-        return "pollEnrich[" + getExpression() + "]";
+        return "pollEnrich[" + description() + "]";
+    }
+
+    @Override
+    public String getEndpointUri() {
+        if (resourceUri != null) {
+            return resourceUri;
+        } else {
+            return null;
+        }
     }
 
     @Override
     public Processor createProcessor(RouteContext routeContext) throws Exception {
+        if (ObjectHelper.isEmpty(resourceUri) && ObjectHelper.isEmpty(resourceRef)) {
+            throw new IllegalArgumentException("Either uri or ref must be provided for resource endpoint");
+        }
 
-        // if no timeout then we should block, and there use a negative timeout
-        long time = timeout != null ? timeout : -1;
-        boolean isIgnoreInvalidEndpoint = getIgnoreInvalidEndpoint() != null && getIgnoreInvalidEndpoint();
-        Expression exp = getExpression().createExpression(routeContext);
+        // lookup endpoint
+        Endpoint endpoint;
+        if (resourceUri != null) {
+            endpoint = routeContext.resolveEndpoint(resourceUri);
+        } else {
+            endpoint = routeContext.resolveEndpoint(null, resourceRef);
+        }
 
-        PollEnricher enricher = new PollEnricher(exp, time);
+        PollEnricher enricher;
+        if (timeout != null) {
+            enricher = new PollEnricher(null, endpoint.createPollingConsumer(), timeout);
+        } else {
+            // if no timeout then we should block, and there use a negative timeout
+            enricher = new PollEnricher(null, endpoint.createPollingConsumer(), -1);
+        }
 
         AggregationStrategy strategy = createAggregationStrategy(routeContext);
         if (strategy == null) {
@@ -95,10 +123,6 @@ public class PollEnrichDefinition extends NoOutputExpressionNode {
         if (getAggregateOnException() != null) {
             enricher.setAggregateOnException(getAggregateOnException());
         }
-        if (getCacheSize() != null) {
-            enricher.setCacheSize(getCacheSize());
-        }
-        enricher.setIgnoreInvalidEndpoint(isIgnoreInvalidEndpoint);
 
         return enricher;
     }
@@ -128,8 +152,34 @@ public class PollEnrichDefinition extends NoOutputExpressionNode {
         return strategy;
     }
 
-    // Fluent API
-    // -------------------------------------------------------------------------
+    public String getResourceUri() {
+        return resourceUri;
+    }
+
+    /**
+     * The endpoint uri for the external service to poll enrich from. You must use either uri or ref.
+     */
+    public void setResourceUri(String resourceUri) {
+        this.resourceUri = resourceUri;
+    }
+
+    public String getResourceRef() {
+        return resourceRef;
+    }
+
+    /**
+     * Refers to the endpoint for the external service to poll enrich from. You must use either uri or ref.
+     *
+     * @deprecated use uri with ref:uri instead
+     */
+    @Deprecated
+    public void setResourceRef(String resourceRef) {
+        this.resourceRef = resourceRef;
+    }
+
+    public Long getTimeout() {
+        return timeout;
+    }
 
     /**
      * Timeout in millis when polling from the external service.
@@ -142,96 +192,6 @@ public class PollEnrichDefinition extends NoOutputExpressionNode {
      * </ul>
      * The default value is -1 and therefore the method could block indefinitely, and therefore its recommended to use a timeout value
      */
-    public PollEnrichDefinition timeout(long timeout) {
-        setTimeout(timeout);
-        return this;
-    }
-
-    /**
-     * Sets the AggregationStrategy to be used to merge the reply from the external service, into a single outgoing message.
-     * By default Camel will use the reply from the external service as outgoing message.
-     */
-    public PollEnrichDefinition aggregationStrategy(AggregationStrategy aggregationStrategy) {
-        setAggregationStrategy(aggregationStrategy);
-        return this;
-    }
-
-    /**
-     * Refers to an AggregationStrategy to be used to merge the reply from the external service, into a single outgoing message.
-     * By default Camel will use the reply from the external service as outgoing message.
-     */
-    public PollEnrichDefinition aggregationStrategyRef(String aggregationStrategyRef) {
-        setAggregationStrategyRef(aggregationStrategyRef);
-        return this;
-    }
-
-    /**
-     * This option can be used to explicit declare the method name to use, when using POJOs as the AggregationStrategy.
-     */
-    public PollEnrichDefinition aggregationStrategyMethodName(String aggregationStrategyMethodName) {
-        setAggregationStrategyMethodName(aggregationStrategyMethodName);
-        return this;
-    }
-
-    /**
-     * If this option is false then the aggregate method is not used if there was no data to enrich.
-     * If this option is true then null values is used as the oldExchange (when no data to enrich),
-     * when using POJOs as the AggregationStrategy.
-     */
-    public PollEnrichDefinition aggregationStrategyMethodAllowNull(boolean aggregationStrategyMethodAllowNull) {
-        setAggregationStrategyMethodAllowNull(aggregationStrategyMethodAllowNull);
-        return this;
-    }
-
-    /**
-     * If this option is false then the aggregate method is not used if there was an exception thrown while trying
-     * to retrieve the data to enrich from the resource. Setting this option to true allows end users to control what
-     * to do if there was an exception in the aggregate method. For example to suppress the exception
-     * or set a custom message body etc.
-     */
-    public PollEnrichDefinition aggregateOnException(boolean aggregateOnException) {
-        setAggregateOnException(aggregateOnException);
-        return this;
-    }
-
-    /**
-     * Sets the maximum size used by the {@link org.apache.camel.impl.ConsumerCache} which is used
-     * to cache and reuse consumers when uris are reused.
-     *
-     * @param cacheSize  the cache size, use <tt>0</tt> for default cache size, or <tt>-1</tt> to turn cache off.
-     * @return the builder
-     */
-    public PollEnrichDefinition cacheSize(int cacheSize) {
-        setCacheSize(cacheSize);
-        return this;
-    }
-
-    /**
-     * Ignore the invalidate endpoint exception when try to create a producer with that endpoint
-     *
-     * @return the builder
-     */
-    public PollEnrichDefinition ignoreInvalidEndpoint() {
-        setIgnoreInvalidEndpoint(true);
-        return this;
-    }
-
-    // Properties
-    // -------------------------------------------------------------------------
-
-    /**
-     * Expression that computes the endpoint uri to use as the resource endpoint to enrich from
-     */
-    @Override
-    public void setExpression(ExpressionDefinition expression) {
-        // override to include javadoc what the expression is used for
-        super.setExpression(expression);
-    }
-
-    public Long getTimeout() {
-        return timeout;
-    }
-
     public void setTimeout(Long timeout) {
         this.timeout = timeout;
     }
@@ -240,6 +200,10 @@ public class PollEnrichDefinition extends NoOutputExpressionNode {
         return aggregationStrategyRef;
     }
 
+    /**
+     * Refers to an AggregationStrategy to be used to merge the reply from the external service, into a single outgoing message.
+     * By default Camel will use the reply from the external service as outgoing message.
+     */
     public void setAggregationStrategyRef(String aggregationStrategyRef) {
         this.aggregationStrategyRef = aggregationStrategyRef;
     }
@@ -248,6 +212,9 @@ public class PollEnrichDefinition extends NoOutputExpressionNode {
         return aggregationStrategyMethodName;
     }
 
+    /**
+     * This option can be used to explicit declare the method name to use, when using POJOs as the AggregationStrategy.
+     */
     public void setAggregationStrategyMethodName(String aggregationStrategyMethodName) {
         this.aggregationStrategyMethodName = aggregationStrategyMethodName;
     }
@@ -256,6 +223,11 @@ public class PollEnrichDefinition extends NoOutputExpressionNode {
         return aggregationStrategyMethodAllowNull;
     }
 
+    /**
+     * If this option is false then the aggregate method is not used if there was no data to enrich.
+     * If this option is true then null values is used as the oldExchange (when no data to enrich),
+     * when using POJOs as the AggregationStrategy.
+     */
     public void setAggregationStrategyMethodAllowNull(Boolean aggregationStrategyMethodAllowNull) {
         this.aggregationStrategyMethodAllowNull = aggregationStrategyMethodAllowNull;
     }
@@ -264,6 +236,10 @@ public class PollEnrichDefinition extends NoOutputExpressionNode {
         return aggregationStrategy;
     }
 
+    /**
+     * Sets the AggregationStrategy to be used to merge the reply from the external service, into a single outgoing message.
+     * By default Camel will use the reply from the external service as outgoing message.
+     */
     public void setAggregationStrategy(AggregationStrategy aggregationStrategy) {
         this.aggregationStrategy = aggregationStrategy;
     }
@@ -272,23 +248,13 @@ public class PollEnrichDefinition extends NoOutputExpressionNode {
         return aggregateOnException;
     }
 
+    /**
+     * If this option is false then the aggregate method is not used if there was an exception thrown while trying
+     * to retrieve the data to enrich from the resource. Setting this option to true allows end users to control what
+     * to do if there was an exception in the aggregate method. For example to suppress the exception
+     * or set a custom message body etc.
+     */
     public void setAggregateOnException(Boolean aggregateOnException) {
         this.aggregateOnException = aggregateOnException;
-    }
-
-    public Integer getCacheSize() {
-        return cacheSize;
-    }
-
-    public void setCacheSize(Integer cacheSize) {
-        this.cacheSize = cacheSize;
-    }
-
-    public Boolean getIgnoreInvalidEndpoint() {
-        return ignoreInvalidEndpoint;
-    }
-
-    public void setIgnoreInvalidEndpoint(Boolean ignoreInvalidEndpoint) {
-        this.ignoreInvalidEndpoint = ignoreInvalidEndpoint;
     }
 }

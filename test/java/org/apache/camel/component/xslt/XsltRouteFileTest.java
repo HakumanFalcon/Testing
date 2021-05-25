@@ -31,7 +31,7 @@ public class XsltRouteFileTest extends XsltRouteTest {
                 from("direct:start")
                     .to("xslt:file:src/test/resources/org/apache/camel/component/xslt/transform.xsl")
                     .multicast()
-                        .bean("testBean")
+                        .beanRef("testBean")
                         .to("mock:result");
             }
         };

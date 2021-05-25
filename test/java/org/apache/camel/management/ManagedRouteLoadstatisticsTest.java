@@ -32,9 +32,7 @@ public class ManagedRouteLoadstatisticsTest extends ManagementTestSupport {
             return;
         }
 
-        boolean load = context.getManagementStrategy().getManagementAgent().getLoadStatisticsEnabled() != null
-                && context.getManagementStrategy().getManagementAgent().getLoadStatisticsEnabled();
-        assertFalse(load);
+        assertFalse(context.getManagementStrategy().isLoadStatisticsEnabled());
         // get the stats for the route
         MBeanServer mbeanServer = getMBeanServer();
         ObjectName on = ObjectName.getInstance("org.apache.camel:context=camel-1,type=routes,name=\"route1\"");
@@ -57,7 +55,7 @@ public class ManagedRouteLoadstatisticsTest extends ManagementTestSupport {
         if (isPlatform("aix")) {
             return;
         }
-        context.getManagementStrategy().getManagementAgent().setLoadStatisticsEnabled(true);
+        context.getManagementStrategy().setLoadStatisticsEnabled(true);
         context.stop();
         context.start();
         // get the stats for the route

@@ -42,19 +42,13 @@ import org.apache.camel.util.ResourceHelper;
  *
  * @version 
  */
-@UriEndpoint(scheme = "language", title = "Language", syntax = "language:languageName:resourceUri", producerOnly = true, label = "core,script")
+@UriEndpoint(scheme = "language", title = "Language", syntax = "language:languageName", producerOnly = true, label = "core,script")
 public class LanguageEndpoint extends ResourceEndpoint {
     private Language language;
     private Expression expression;
     private boolean contentResolvedFromResource;
-    @UriPath(enums = "bean,constant,el,exchangeProperty,file,groovy,header,javascript,jsonpath,jxpath,mvel,ognl,php,python"
-            + ",ref,ruby,simple,spel,sql,terser,tokenize,xpath,xquery,xtokenize")
-    @Metadata(required = "true")
+    @UriPath(enums = "bean,constant,el,exchangeProperty,file,groovy,header,jsonpath,jxpath,mvel,ognl,ref,simple,spel,sql,terser,tokenize,xpath,xquery,xtokenize") @Metadata(required = "true")
     private String languageName;
-    // resourceUri is optional in the language endpoint
-    @UriPath(description = "Path to the resource, or a reference to lookup a bean in the Registry to use as the resource")
-    @Metadata(required = "false")
-    private String resourceUri;
     @UriParam
     private String script;
     @UriParam(defaultValue = "true")
@@ -184,21 +178,6 @@ public class LanguageEndpoint extends ResourceEndpoint {
      */
     public void setLanguageName(String languageName) {
         this.languageName = languageName;
-    }
-
-    /**
-     * Path to the resource, or a reference to lookup a bean in the Registry to use as the resource
-     *
-     * @param resourceUri  the resource path
-     */
-    @Override
-    public void setResourceUri(String resourceUri) {
-        super.setResourceUri(resourceUri);
-    }
-
-    @Override
-    public String getResourceUri() {
-        return super.getResourceUri();
     }
 
     /**

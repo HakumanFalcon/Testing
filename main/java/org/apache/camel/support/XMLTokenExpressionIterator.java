@@ -48,7 +48,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * An {@link org.apache.camel.language.tokenizer.XMLTokenizeLanguage} based iterator.
+ *
  */
 public class XMLTokenExpressionIterator extends ExpressionAdapter implements NamespaceAware {
     protected final String path;
@@ -89,11 +89,19 @@ public class XMLTokenExpressionIterator extends ExpressionAdapter implements Nam
     }
 
     protected Iterator<?> createIterator(InputStream in, String charset) throws XMLStreamException, UnsupportedEncodingException {
-        return new XMLTokenIterator(path, nsmap, mode, group, in, charset);
+        Reader reader;
+        if (charset == null) {
+            reader = new InputStreamReader(in);
+        } else {
+            reader = new InputStreamReader(in, charset);
+        }
+        XMLTokenIterator iterator = new XMLTokenIterator(path, nsmap, mode, group, reader);
+        return iterator;
     }
 
     protected Iterator<?> createIterator(Reader in) throws XMLStreamException {
-        return new XMLTokenIterator(path, nsmap, mode, group, in);
+        XMLTokenIterator iterator = new XMLTokenIterator(path, nsmap, mode, group, in);
+        return iterator;
     }
 
     @Override
@@ -150,8 +158,6 @@ public class XMLTokenExpressionIterator extends ExpressionAdapter implements Nam
         private static final Logger LOG = LoggerFactory.getLogger(XMLTokenIterator.class);
         private static final Pattern NAMESPACE_PATTERN = Pattern.compile("xmlns(:\\w+|)\\s*=\\s*('[^']*'|\"[^\"]*\")");
 
-        private transient InputStream originalInputStream;
-
         private AttributedQName[] splitpath;
         private int index;
         private char mode;
@@ -176,14 +182,12 @@ public class XMLTokenExpressionIterator extends ExpressionAdapter implements Nam
             throws XMLStreamException, UnsupportedEncodingException {
             // woodstox's getLocation().etCharOffset() does not return the offset correctly for InputStream, so use Reader instead.
             this(path, nsmap, mode, 1, new InputStreamReader(in, charset));
-            this.originalInputStream = in;
         }
 
         public XMLTokenIterator(String path, Map<String, String> nsmap, char mode, int group, InputStream in, String charset) 
             throws XMLStreamException, UnsupportedEncodingException {
             // woodstox's getLocation().etCharOffset() does not return the offset correctly for InputStream, so use Reader instead.
-            this(path, nsmap, mode, group, new InputStreamReader(in, charset));
-            this.originalInputStream = in;
+            this(path, nsmap, mode, new InputStreamReader(in, charset));
         }
 
         public XMLTokenIterator(String path, Map<String, String> nsmap, char mode, Reader in) throws XMLStreamException {
@@ -274,7 +278,7 @@ public class XMLTokenExpressionIterator extends ExpressionAdapter implements Nam
             return c;
         }
         
-        private String getCurrentText() {
+        private String getCurrenText() {
             int pos = reader.getLocation().getCharacterOffset();
             String txt = in.getText(pos - consumed);
             consumed = pos;
@@ -353,7 +357,7 @@ public class XMLTokenExpressionIterator extends ExpressionAdapter implements Nam
             readCurrent(true);
             popName();
             
-            String token = createContextualToken(getCurrentText());
+            String token = createContextualToken(getCurrenText());
             if (mode == 'i') {
                 popNamespaces();
             }
@@ -462,7 +466,7 @@ public class XMLTokenExpressionIterator extends ExpressionAdapter implements Nam
                         LOG.trace("se={}; depth={}; trackdepth={}", new Object[]{name, depth, trackdepth});
                     }
                     
-                    String token = getCurrentText();
+                    String token = getCurrenText();
                     // perform the second compliance test
                     if (!compliant) {
                         if (token != null && token.startsWith("<") && !token.startsWith("<?")) {
@@ -596,12 +600,8 @@ public class XMLTokenExpressionIterator extends ExpressionAdapter implements Nam
         public void close() throws IOException {
             try {
                 reader.close();
-            } catch (Exception e) {
-                // ignore
-            }
-            // need to close the original input stream as well as the reader do not delegate close it
-            if (originalInputStream != null) {
-                IOHelper.close(originalInputStream);
+            } catch (XMLStreamException e) {
+                throw new IOException(e);
             }
         }
     }

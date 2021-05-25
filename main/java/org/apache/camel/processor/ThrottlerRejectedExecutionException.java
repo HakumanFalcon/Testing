@@ -18,12 +18,13 @@ package org.apache.camel.processor;
 
 import java.util.concurrent.RejectedExecutionException;
 
-public class ThrottlerRejectedExecutionException extends RejectedExecutionException {
+
+public class ThrottlerRejectedExecutionException
+    extends RejectedExecutionException {
     private static final long serialVersionUID = 1L;
 
     public ThrottlerRejectedExecutionException(String message) {
         super(message);
     }
-
 }
 

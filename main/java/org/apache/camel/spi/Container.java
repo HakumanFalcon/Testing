@@ -38,7 +38,6 @@ import org.slf4j.LoggerFactory;
  * @deprecated use {@link CamelContextTracker} and {@link org.apache.camel.impl.CamelContextTrackerRegistry}
  */
 // [TODO] Remove in 3.0
-@Deprecated
 public interface Container {
 
     /**
@@ -82,9 +81,9 @@ public interface Container {
         }
 
         /**
-         * Called by Camel when a <code>CamelContext</code> is being started.
+         * Called by Camel when a <code>CamelContext</code> has been created.
          *
-         * @param camelContext the CamelContext to manage
+         * @param camelContext the newly created CamelContext
          */
         public static void manage(CamelContext camelContext) {
             Container cnt = container;
@@ -105,9 +104,9 @@ public interface Container {
         }
 
         /**
-         * Called by Camel when a <code>CamelContext</code> is being stopped.
+         * Called by Camel when a <code>CamelContext</code> has been destroyed.
          *
-         * @param camelContext the CamelContext which is being stopped
+         * @param camelContext the CamelContext which has been destroyed
          */
         public static void unmanage(CamelContext camelContext) {
             CONTEXTS.remove(camelContext);
@@ -115,20 +114,20 @@ public interface Container {
     }
 
     /**
-     * Called by Camel before a <code>CamelContext</code> has been started.
+     * Called by Camel when a <code>CamelContext</code> has been created by its constructor.
      * <p/>
-     * Notice this method is invoked when the {@link org.apache.camel.CamelContext} has been started.
+     * Notice this method is invoked when the {@link org.apache.camel.CamelContext} has been created by its constructor.
      * The context is <b>not</b> yet finished being configured. For example the id/name of the {@link org.apache.camel.CamelContext}
      * has not been resolved yet, and may return <tt>null</tt>.
      * <p/>
      * The intention is implementations of {@link org.apache.camel.spi.Container} is able to configure the {@link org.apache.camel.CamelContext}
-     * before it has been fully started.
+     * before its being started.
      * <p/>
-     * To receive callbacks when the {@link org.apache.camel.CamelContext} is fully configured and has been started, then
+     * To receive callbacks when the {@link org.apache.camel.CamelContext} has finished being configured and is being started, then
      * use {@link org.apache.camel.spi.EventNotifier} to listen for the {@link org.apache.camel.management.event.CamelContextStartedEvent}
      * event.
      *
-     * @param camelContext the CamelContext to manage
+     * @param camelContext the newly created CamelContext by its constructor
      */
     void manage(CamelContext camelContext);
 

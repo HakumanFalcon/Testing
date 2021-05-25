@@ -20,7 +20,6 @@ import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;
 import javax.xml.bind.annotation.XmlRootElement;
 
-import org.apache.camel.Expression;
 import org.apache.camel.Predicate;
 import org.apache.camel.model.language.ExpressionDefinition;
 import org.apache.camel.processor.validation.PredicateValidatingProcessor;
@@ -39,15 +38,7 @@ public class ValidateDefinition extends NoOutputExpressionNode {
 
     public ValidateDefinition() {
     }
-
-    public ValidateDefinition(Expression expression) {
-        super(expression);
-    }
-
-    public ValidateDefinition(Predicate predicate) {
-        super(predicate);
-    }
-
+    
     @Override
     public String toString() {
         return "Validate[" + getExpression() + " -> " + getOutputs() + "]";

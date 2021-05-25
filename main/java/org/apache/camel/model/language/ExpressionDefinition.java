@@ -17,32 +17,29 @@
 package org.apache.camel.model.language;
 
 import java.util.List;
-import java.util.Map;
 import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;
-import javax.xml.bind.annotation.XmlAnyAttribute;
 import javax.xml.bind.annotation.XmlAttribute;
 import javax.xml.bind.annotation.XmlID;
 import javax.xml.bind.annotation.XmlRootElement;
 import javax.xml.bind.annotation.XmlTransient;
 import javax.xml.bind.annotation.XmlType;
 import javax.xml.bind.annotation.XmlValue;
-import javax.xml.namespace.QName;
+import javax.xml.bind.annotation.adapters.CollapsedStringAdapter;
+import javax.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
 
-import org.apache.camel.AfterPropertiesConfigured;
 import org.apache.camel.CamelContext;
 import org.apache.camel.Exchange;
 import org.apache.camel.Expression;
 import org.apache.camel.Predicate;
-import org.apache.camel.model.OtherAttributesAware;
 import org.apache.camel.spi.Language;
 import org.apache.camel.spi.Metadata;
+import org.apache.camel.spi.Required;
 import org.apache.camel.spi.RouteContext;
 import org.apache.camel.util.CollectionStringBuffer;
 import org.apache.camel.util.ExpressionToPredicateAdapter;
 import org.apache.camel.util.IntrospectionSupport;
 import org.apache.camel.util.ObjectHelper;
-import org.apache.camel.util.ResourceHelper;
 
 /**
  * A useful base class for an expression
@@ -51,11 +48,12 @@ import org.apache.camel.util.ResourceHelper;
 @XmlRootElement
 @XmlType(name = "expression") // must be named expression
 @XmlAccessorType(XmlAccessType.FIELD)
-public class ExpressionDefinition implements Expression, Predicate, OtherAttributesAware {
+public class ExpressionDefinition implements Expression, Predicate {
     @XmlAttribute
+    @XmlJavaTypeAdapter(CollapsedStringAdapter.class)
     @XmlID
     private String id;
-    @XmlValue @Metadata(required = "true")
+    @XmlValue
     private String expression;
     @XmlAttribute @Metadata(defaultValue = "true")
     private Boolean trim;
@@ -65,9 +63,6 @@ public class ExpressionDefinition implements Expression, Predicate, OtherAttribu
     private Expression expressionValue;
     @XmlTransient
     private ExpressionDefinition expressionType;
-    // use xs:any to support optional property placeholders
-    @XmlAnyAttribute
-    private Map<QName, Object> otherAttributes;
 
     public ExpressionDefinition() {
     }
@@ -163,9 +158,6 @@ public class ExpressionDefinition implements Expression, Predicate, OtherAttribu
                 if (exp != null && isTrim) {
                     exp = exp.trim();
                 }
-                // resolve the expression as it may be an external script from the classpath/file etc
-                exp = ResourceHelper.resolveOptionalExternalScript(camelContext, exp);
-
                 predicate = language.createPredicate(exp);
                 configurePredicate(camelContext, predicate);
             }
@@ -191,9 +183,6 @@ public class ExpressionDefinition implements Expression, Predicate, OtherAttribu
                 if (exp != null && isTrim) {
                     exp = exp.trim();
                 }
-                // resolve the expression as it may be an external script from the classpath/file etc
-                exp = ResourceHelper.resolveOptionalExternalScript(camelContext, exp);
-
                 setExpressionValue(language.createExpression(exp));
                 configureExpression(camelContext, getExpressionValue());
             }
@@ -208,6 +197,7 @@ public class ExpressionDefinition implements Expression, Predicate, OtherAttribu
     /**
      * The expression value in your chosen language syntax
      */
+    @Required
     public void setExpression(String expression) {
         this.expression = expression;
     }
@@ -250,16 +240,6 @@ public class ExpressionDefinition implements Expression, Predicate, OtherAttribu
         this.trim = trim;
     }
 
-    @Override
-    public Map<QName, Object> getOtherAttributes() {
-        return otherAttributes;
-    }
-
-    @Override
-    public void setOtherAttributes(Map<QName, Object> otherAttributes) {
-        this.otherAttributes = otherAttributes;
-    }
-
     /**
      * Returns some descriptive text to describe this node
      */
@@ -285,22 +265,10 @@ public class ExpressionDefinition implements Expression, Predicate, OtherAttribu
         this.expressionType = expressionType;
     }
 
-    @SuppressWarnings("unchecked")
     protected void configurePredicate(CamelContext camelContext, Predicate predicate) {
-        // allows to perform additional logic after the properties has been configured which may be needed
-        // in the various camel components outside camel-core
-        if (predicate instanceof AfterPropertiesConfigured) {
-            ((AfterPropertiesConfigured) predicate).afterPropertiesConfigured(camelContext);
-        }
     }
 
-    @SuppressWarnings("unchecked")
     protected void configureExpression(CamelContext camelContext, Expression expression) {
-        // allows to perform additional logic after the properties has been configured which may be needed
-        // in the various camel components outside camel-core
-        if (expression instanceof AfterPropertiesConfigured) {
-            ((AfterPropertiesConfigured) expression).afterPropertiesConfigured(camelContext);
-        }
     }
 
     /**

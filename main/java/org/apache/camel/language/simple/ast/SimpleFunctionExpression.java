@@ -128,21 +128,11 @@ public class SimpleFunctionExpression extends LiteralExpression {
             return ExpressionBuilder.systemEnvironmentExpression(remainder);
         }
 
-        // exchange OGNL
-        remainder = ifStartsWithReturnRemainder("exchange", function);
-        if (remainder != null) {
-            boolean invalid = OgnlHelper.isInvalidValidOgnlExpression(remainder);
-            if (invalid) {
-                throw new SimpleParserException("Valid syntax: ${exchange.OGNL} was: " + function, token.getIndex());
-            }
-            return ExpressionBuilder.exchangeOgnlExpression(remainder);
-        }
-
         // file: prefix
         remainder = ifStartsWithReturnRemainder("file:", function);
         if (remainder != null) {
-            Expression fileExpression = createSimpleFileExpression(remainder, strict);
-            if (fileExpression != null) {
+            Expression fileExpression = createSimpleFileExpression(remainder);
+            if (function != null) {
                 return fileExpression;
             }
         }
@@ -321,27 +311,6 @@ public class SimpleFunctionExpression extends LiteralExpression {
         if (remainder != null) {
             return ExpressionBuilder.outHeaderExpression(remainder);
         }
-        
-        // random
-        remainder = ifStartsWithReturnRemainder("random", function);
-        if (remainder != null) {
-            String values = ObjectHelper.between(remainder, "(", ")");
-            if (values == null || ObjectHelper.isEmpty(values)) {
-                throw new SimpleParserException("Valid syntax: ${random(min,max)} or ${random(max)} was: " + function, token.getIndex());
-            }
-            if (values.contains(",")) {
-                String[] tokens = values.split(",", -1);
-                if (tokens.length > 2) {
-                    throw new SimpleParserException("Valid syntax: ${random(min,max)} or ${random(max)} was: " + function, token.getIndex());
-                }
-                int min = Integer.parseInt(tokens[0].trim());
-                int max = Integer.parseInt(tokens[1].trim());
-                return ExpressionBuilder.randomExpression(min, max);
-            } else {
-                int max = Integer.parseInt(values.trim());
-                return ExpressionBuilder.randomExpression(max);
-            }
-        }
 
         return null;
     }
@@ -355,8 +324,6 @@ public class SimpleFunctionExpression extends LiteralExpression {
             return ExpressionBuilder.messageIdExpression();
         } else if (ObjectHelper.equal(expression, "exchangeId")) {
             return ExpressionBuilder.exchangeIdExpression();
-        } else if (ObjectHelper.equal(expression, "exchange")) {
-            return ExpressionBuilder.exchangeExpression();
         } else if (ObjectHelper.equal(expression, "exception")) {
             return ExpressionBuilder.exchangeExceptionExpression();
         } else if (ObjectHelper.equal(expression, "exception.message")) {
@@ -376,7 +343,7 @@ public class SimpleFunctionExpression extends LiteralExpression {
         return null;
     }
 
-    private Expression createSimpleFileExpression(String remainder, boolean strict) {
+    private Expression createSimpleFileExpression(String remainder) {
         if (ObjectHelper.equal(remainder, "name")) {
             return ExpressionBuilder.fileNameExpression();
         } else if (ObjectHelper.equal(remainder, "name.noext")) {
@@ -406,10 +373,7 @@ public class SimpleFunctionExpression extends LiteralExpression {
         } else if (ObjectHelper.equal(remainder, "modified")) {
             return ExpressionBuilder.fileLastModifiedExpression();
         }
-        if (strict) {
-            throw new SimpleParserException("Unknown file language syntax: " + remainder, token.getIndex());
-        }
-        return null;
+        throw new SimpleParserException("Unknown file language syntax: " + remainder, token.getIndex());
     }
 
     private String ifStartsWithReturnRemainder(String prefix, String text) {

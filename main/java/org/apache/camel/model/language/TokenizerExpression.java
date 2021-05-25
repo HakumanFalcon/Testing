@@ -33,7 +33,7 @@ import org.apache.camel.util.ExpressionToPredicateAdapter;
  *
  * @see TokenizeLanguage
  */
-@Metadata(label = "language,core", title = "Tokenize")
+@Metadata(label = "language", title = "Tokenize")
 @XmlRootElement(name = "tokenize")
 @XmlAccessorType(XmlAccessType.FIELD)
 public class TokenizerExpression extends ExpressionDefinition {
@@ -113,7 +113,7 @@ public class TokenizerExpression extends ExpressionDefinition {
     }
 
     /**
-     * To inherit namepaces from a root/parent tag name when using XML
+     * To inherit namepaces from a root/parent tag name
      */
     public void setInheritNamespaceTagName(String inheritNamespaceTagName) {
         this.inheritNamespaceTagName = inheritNamespaceTagName;
@@ -136,7 +136,7 @@ public class TokenizerExpression extends ExpressionDefinition {
     }
 
     /**
-     * Whether to include the tokens in the parts when using pairs
+     * Whether to include the tokens in the parts
      * <p/>
      * The default value is false
      */

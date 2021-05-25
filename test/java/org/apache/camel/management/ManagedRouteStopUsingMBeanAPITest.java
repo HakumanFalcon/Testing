@@ -18,6 +18,7 @@ package org.apache.camel.management;
 
 import java.util.Set;
 import javax.management.MBeanServer;
+import javax.management.MBeanServerInvocationHandler;
 import javax.management.ObjectName;
 
 import org.apache.camel.ServiceStatus;
@@ -47,7 +48,7 @@ public class ManagedRouteStopUsingMBeanAPITest extends ManagementTestSupport {
 
         ObjectName on = set.iterator().next();
 
-        ManagedRouteMBean mbean = context.getManagementStrategy().getManagementAgent().newProxyClient(on, ManagedRouteMBean.class);
+        ManagedRouteMBean mbean = MBeanServerInvocationHandler.newProxyInstance(mbeanServer, on, ManagedRouteMBean.class, false);
 
         // the route has this starting endpoint uri
         assertEquals("direct://start", mbean.getEndpointUri());

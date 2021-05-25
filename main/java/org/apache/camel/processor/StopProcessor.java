@@ -19,7 +19,6 @@ package org.apache.camel.processor;
 import org.apache.camel.AsyncCallback;
 import org.apache.camel.AsyncProcessor;
 import org.apache.camel.Exchange;
-import org.apache.camel.spi.IdAware;
 import org.apache.camel.support.ServiceSupport;
 import org.apache.camel.util.AsyncProcessorHelper;
 
@@ -28,9 +27,7 @@ import org.apache.camel.util.AsyncProcessorHelper;
  *
  * @version 
  */
-public class StopProcessor extends ServiceSupport implements AsyncProcessor, IdAware {
-
-    private String id;
+public class StopProcessor extends ServiceSupport implements AsyncProcessor {
 
     public void process(Exchange exchange) throws Exception {
         AsyncProcessorHelper.process(this, exchange);
@@ -47,14 +44,6 @@ public class StopProcessor extends ServiceSupport implements AsyncProcessor, IdA
     @Override
     public String toString() {
         return "Stop";
-    }
-
-    public String getId() {
-        return id;
-    }
-
-    public void setId(String id) {
-        this.id = id;
     }
 
     @Override

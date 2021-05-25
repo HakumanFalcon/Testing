@@ -30,24 +30,20 @@ package org.apache.camel.spi;
 public interface ShutdownPrepared {
 
     /**
-     * Prepares for stop/shutdown.
+     * Prepares for shutdown.
      * <p/>
      * The {@link ShutdownStrategy} supports preparing for shutdown using two steps.
      * First a regular preparation, where the given forced parameter will be <tt>false</tt>.
      * And if the shutdown times out, then the {@link ShutdownStrategy} performs a more aggressive
      * shutdown, calling this method a second time with <tt>true</tt> for the given forced parameter.
-     * For example by graceful stopping any threads or the likes.
      * <p/>
-     * In addition a service can also be suspended (not stopped), and when this happens the parameter
-     * <tt>suspendOnly</tt> has the value <tt>true</tt>. This can be used to prepare the service
-     * for suspension, such as marking a worker thread to skip action.
+     * For example by graceful stopping any threads or the likes.
      * <p/>
      * For forced shutdown, then the service is expected to aggressively shutdown any child services, such
      * as thread pools etc. This is the last chance it has to perform such duties.
      * 
-     * @param suspendOnly <tt>true</tt> if the intention is to only suspend the service, and not stop/shutdown the service.
-     * @param forced <tt>true</tt> is forcing a more aggressive shutdown, <tt>false</tt> is for preparing to shutdown.
+     * @param forced <tt>true</tt> is forcing a more aggressive shutdown, <tt>false</tt> is for preparing to shutdown. 
      */
-    void prepareShutdown(boolean suspendOnly, boolean forced);
+    void prepareShutdown(boolean forced);
 
 }

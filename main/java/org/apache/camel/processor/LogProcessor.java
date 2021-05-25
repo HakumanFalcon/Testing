@@ -21,7 +21,6 @@ import org.apache.camel.AsyncProcessor;
 import org.apache.camel.Exchange;
 import org.apache.camel.Expression;
 import org.apache.camel.Traceable;
-import org.apache.camel.spi.IdAware;
 import org.apache.camel.support.ServiceSupport;
 import org.apache.camel.util.AsyncProcessorHelper;
 import org.apache.camel.util.CamelLogger;
@@ -31,9 +30,8 @@ import org.apache.camel.util.CamelLogger;
  *
  * @version 
  */
-public class LogProcessor extends ServiceSupport implements AsyncProcessor, Traceable, IdAware {
+public class LogProcessor extends ServiceSupport implements AsyncProcessor, Traceable {
 
-    private String id;
     private final Expression expression;
     private final CamelLogger logger;
 
@@ -69,22 +67,6 @@ public class LogProcessor extends ServiceSupport implements AsyncProcessor, Trac
 
     public String getTraceLabel() {
         return "log[" + expression + "]";
-    }
-
-    public String getId() {
-        return id;
-    }
-
-    public void setId(String id) {
-        this.id = id;
-    }
-
-    public Expression getExpression() {
-        return expression;
-    }
-
-    public CamelLogger getLogger() {
-        return logger;
     }
 
     @Override

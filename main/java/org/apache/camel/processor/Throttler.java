@@ -26,7 +26,6 @@ import org.apache.camel.Expression;
 import org.apache.camel.Processor;
 import org.apache.camel.RuntimeExchangeException;
 import org.apache.camel.Traceable;
-import org.apache.camel.spi.IdAware;
 import org.apache.camel.util.ObjectHelper;
 
 /**
@@ -40,8 +39,7 @@ import org.apache.camel.util.ObjectHelper;
  *
  * @version
  */
-public class Throttler extends DelayProcessorSupport implements Traceable, IdAware {
-    private String id;
+public class Throttler extends DelayProcessorSupport implements Traceable {
     private volatile long maximumRequestsPerPeriod;
     private Expression maxRequestsPerPeriodExpression;
     private AtomicLong timePeriodMillis = new AtomicLong(1000);
@@ -70,14 +68,6 @@ public class Throttler extends DelayProcessorSupport implements Traceable, IdAwa
 
     public String getTraceLabel() {
         return "throttle[" + maxRequestsPerPeriodExpression + " per: " + timePeriodMillis + "]";
-    }
-
-    public String getId() {
-        return id;
-    }
-
-    public void setId(String id) {
-        this.id = id;
     }
 
     // Properties
@@ -151,16 +141,12 @@ public class Throttler extends DelayProcessorSupport implements Traceable, IdAwa
     /*
      * Determine what the next available time slot is for handling an Exchange
      */
-    protected synchronized TimeSlot nextSlot() throws ThrottlerRejectedExecutionException {
+    protected synchronized TimeSlot nextSlot() {
         if (slot == null) {
             slot = new TimeSlot();
-        } else {
-            if (rejectExecution && slot.isFull() && !slot.isPast()) {
-                throw new ThrottlerRejectedExecutionException("Exceed the max request limit!");
-            }
-            if (slot.isFull() || slot.isPast()) {
-                slot = slot.next();
-            }
+        }
+        if (slot.isFull() || !slot.isPast()) {
+            slot = slot.next();
         }
         slot.assign();
         return slot;
@@ -197,7 +183,7 @@ public class Throttler extends DelayProcessorSupport implements Traceable, IdAwa
 
         protected boolean isPast() {
             long current = System.currentTimeMillis();
-            return current > (startTime + duration);
+            return current < (startTime + duration);
         }
 
         protected boolean isActive() {

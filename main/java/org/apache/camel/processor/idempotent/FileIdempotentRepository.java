@@ -153,13 +153,6 @@ public class FileIdempotentRepository extends ServiceSupport implements Idempote
         // noop
         return true;
     }
-    
-    @ManagedOperation(description = "Clear the store")
-    public void clear() {
-        synchronized (cache) {
-            cache.clear();
-        }        
-    }
 
     public File getFileStore() {
         return fileStore;
@@ -290,9 +283,7 @@ public class FileIdempotentRepository extends ServiceSupport implements Idempote
         if (!fileStore.exists()) {
             LOG.debug("Creating filestore: {}", fileStore);
             File parent = fileStore.getParentFile();
-            if (parent != null) {
-                parent.mkdirs();
-            }
+            parent.mkdirs();
             boolean created = FileUtil.createNewFile(fileStore);
             if (!created) {
                 throw new IOException("Cannot create filestore: " + fileStore);

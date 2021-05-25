@@ -31,7 +31,7 @@ public class XsltRouteAllowStAXTest extends XsltRouteTest {
                 from("direct:start")
                     .to("xslt:org/apache/camel/component/xslt/transform.xsl?allowStAX=true")
                     .multicast()
-                        .bean("testBean")
+                        .beanRef("testBean")
                         .to("mock:result");
             }
         };

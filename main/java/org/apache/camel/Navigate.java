@@ -28,9 +28,6 @@ public interface Navigate<T> {
 
     /**
      * Next group of outputs
-     * <p/>
-     * Important only invoke this once, as this method do not carry state, and is not intended to be used in a while loop,
-     * but used by a if statement instead.
      *
      * @return next group or <tt>null</tt> if no more outputs
      */
@@ -38,9 +35,6 @@ public interface Navigate<T> {
 
     /**
      * Are there more outputs?
-     * <p/>
-     * Important only invoke this once, as this method do not carry state, and is not intended to be used in a while loop,
-     * but used by a if statement instead.
      *
      * @return <tt>true</tt> if more outputs
      */

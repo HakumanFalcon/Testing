@@ -16,7 +16,7 @@
  */
 package org.apache.camel.component.bean.issues;
 
-public class SingleMethodServiceImpl extends SingleMethodAbstractService<String, String> {
+public class SingleMethodServiceImpl implements SingleMethodService<String, String> {
 
     @Override
     public String doSomething(String foo) {

@@ -42,21 +42,21 @@ import org.slf4j.LoggerFactory;
  *
  * @version 
  */
-@UriEndpoint(scheme = "dataset", title = "Dataset", syntax = "dataset:name", consumerClass = DataSetConsumer.class, label = "core,testing", lenientProperties = true)
+@UriEndpoint(scheme = "dataset", title = "Dataset", syntax = "dataset:name", consumerClass = DataSetConsumer.class, label = "core,testing")
 public class DataSetEndpoint extends MockEndpoint implements Service {
     private final transient Logger log;
     private final AtomicInteger receivedCounter = new AtomicInteger();
     @UriPath(name = "name", description = "Name of DataSet to lookup in the registry") @Metadata(required = "true")
     private volatile DataSet dataSet;
-    @UriParam(label = "consumer", defaultValue = "0")
+    @UriParam(defaultValue = "0")
     private int minRate;
-    @UriParam(label = "consumer", defaultValue = "3")
+    @UriParam(defaultValue = "3")
     private long produceDelay = 3;
-    @UriParam(label = "producer", defaultValue = "0")
+    @UriParam(defaultValue = "0")
     private long consumeDelay;
-    @UriParam(label = "consumer", defaultValue = "0")
+    @UriParam(defaultValue = "0")
     private long preloadSize;
-    @UriParam(label = "consumer", defaultValue = "1000")
+    @UriParam(defaultValue = "1000")
     private long initialDelay = 1000;
 
     @Deprecated
@@ -163,7 +163,7 @@ public class DataSetEndpoint extends MockEndpoint implements Service {
     }
 
     /**
-     * Allows a delay to be specified which causes a delay when a message is consumed by the producer (to simulate slow processing)
+     * Allows a delay to be specified which causes consumers to pause - to simulate slow consumers
      */
     public void setConsumeDelay(long consumeDelay) {
         this.consumeDelay = consumeDelay;
@@ -174,7 +174,7 @@ public class DataSetEndpoint extends MockEndpoint implements Service {
     }
 
     /**
-     * Allows a delay to be specified which causes a delay when a message is sent by the consumer (to simulate slow processing)
+     * Allows a delay to be specified which causes producers to pause - to simulate slow producers
      */
     public void setProduceDelay(long produceDelay) {
         this.produceDelay = produceDelay;

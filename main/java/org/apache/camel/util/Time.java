@@ -43,15 +43,15 @@ public class Time {
     }
 
     public static Time minutes(long value) {
-        return new Time(minutesAsSeconds(value), TimeUnit.SECONDS);
+        return new Time(minutesAsSeconds(value), TimeUnit.MILLISECONDS);
     }
 
     public static Time hours(long value) {
-        return new Time(hoursAsSeconds(value), TimeUnit.SECONDS);
+        return new Time(hoursAsSeconds(value), TimeUnit.MILLISECONDS);
     }
 
     public static Time days(long value) {
-        return new Time(daysAsSeconds(value), TimeUnit.SECONDS);
+        return new Time(daysAsSeconds(value), TimeUnit.MILLISECONDS);
     }
 
     public long toMillis() {

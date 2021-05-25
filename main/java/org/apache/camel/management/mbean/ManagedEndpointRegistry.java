@@ -29,9 +29,7 @@ import org.apache.camel.api.management.ManagedResource;
 import org.apache.camel.api.management.mbean.CamelOpenMBeanTypes;
 import org.apache.camel.api.management.mbean.ManagedEndpointRegistryMBean;
 import org.apache.camel.spi.EndpointRegistry;
-import org.apache.camel.spi.ManagementStrategy;
 import org.apache.camel.util.ObjectHelper;
-import org.apache.camel.util.URISupport;
 
 /**
  * @version 
@@ -39,16 +37,10 @@ import org.apache.camel.util.URISupport;
 @ManagedResource(description = "Managed EndpointRegistry")
 public class ManagedEndpointRegistry extends ManagedService implements ManagedEndpointRegistryMBean {
     private final EndpointRegistry endpointRegistry;
-    private boolean sanitize;
 
     public ManagedEndpointRegistry(CamelContext context, EndpointRegistry endpointRegistry) {
         super(context, endpointRegistry);
         this.endpointRegistry = endpointRegistry;
-    }
-
-    public void init(ManagementStrategy strategy) {
-        super.init(strategy);
-        sanitize = strategy.getManagementAgent().getMask() != null ? strategy.getManagementAgent().getMask() : false;
     }
 
     public EndpointRegistry getEndpointRegistry() {
@@ -87,9 +79,6 @@ public class ManagedEndpointRegistry extends ManagedService implements ManagedEn
             for (Endpoint endpoint : endpoints) {
                 CompositeType ct = CamelOpenMBeanTypes.listEndpointsCompositeType();
                 String url = endpoint.getEndpointUri();
-                if (sanitize) {
-                    url = URISupport.sanitizeUri(url);
-                }
 
                 boolean fromStatic = endpointRegistry.isStatic(url);
                 boolean fromDynamic = endpointRegistry.isDynamic(url);

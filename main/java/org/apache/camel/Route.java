@@ -46,13 +46,6 @@ public interface Route extends EndpointAware {
     String getId();
 
     /**
-     * Gets the uptime in a human readable format
-     *
-     * @return the uptime in days/hours/minutes
-     */
-    String getUptime();
-
-    /**
      * Gets the inbound {@link Consumer}
      *
      * @return the inbound consumer
@@ -117,14 +110,6 @@ public interface Route extends EndpointAware {
      * @return a navigator for {@link Processor}.
      */
     Navigate<Processor> navigate();
-
-    /**
-     * Returns a list of all the {@link Processor}s from this route that has id's matching the pattern
-     *
-     * @param pattern the pattern to match by ids
-     * @return a list of {@link Processor}, is never <tt>null</tt>.
-     */
-    List<Processor> filter(String pattern);
 
     /**
      * Callback preparing the route to be started, by warming up the route.

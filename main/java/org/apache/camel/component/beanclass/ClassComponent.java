@@ -19,7 +19,9 @@ package org.apache.camel.component.beanclass;
 import java.util.Map;
 
 import org.apache.camel.Endpoint;
+import org.apache.camel.Processor;
 import org.apache.camel.component.bean.BeanComponent;
+import org.apache.camel.component.bean.BeanEndpoint;
 import org.apache.camel.component.bean.BeanHolder;
 import org.apache.camel.component.bean.ConstantBeanHolder;
 

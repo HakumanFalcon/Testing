@@ -185,6 +185,7 @@ public class CircuitBreakerLoadBalancerTest extends ContextTestSupport {
         assertTrue(exchangeThree.getException() instanceof RejectedExecutionException);
         assertTrue(exchangeFour.getException() == null);
         assertTrue(exchangeFive.getException() == null);
+        
     }
 
     public void testHalfOpenCircuitClosesAfterTimeoutSync() throws Exception {

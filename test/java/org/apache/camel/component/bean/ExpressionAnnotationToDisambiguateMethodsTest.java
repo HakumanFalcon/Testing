@@ -58,9 +58,9 @@ public class ExpressionAnnotationToDisambiguateMethodsTest extends ContextTestSu
     protected RouteBuilder createRouteBuilder() {
         return new RouteBuilder() {
             public void configure() {
-                from("direct:in").bean("myBean");
+                from("direct:in").beanRef("myBean");
 
-                from("direct:other").bean("myOtherBean");
+                from("direct:other").beanRef("myOtherBean");
             }
         };
     }

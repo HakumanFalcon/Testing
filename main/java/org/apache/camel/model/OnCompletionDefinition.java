@@ -133,7 +133,8 @@ public class OnCompletionDefinition extends ProcessorDefinition<OnCompletionDefi
 
         // wrap the on completion route in a unit of work processor
         CamelInternalProcessor internal = new CamelInternalProcessor(childProcessor);
-        internal.addAdvice(new CamelInternalProcessor.UnitOfWorkProcessorAdvice(routeContext));
+        internal.addAdvice(new CamelInternalProcessor.UnitOfWorkProcessorAdvice(routeId));
+        internal.addAdvice(new CamelInternalProcessor.RouteContextAdvice(routeContext));
 
         onCompletions.put(routeId, internal);
 
@@ -288,17 +289,6 @@ public class OnCompletionDefinition extends ProcessorDefinition<OnCompletionDefi
      */
     public OnCompletionDefinition parallelProcessing() {
         setParallelProcessing(true);
-        return this;
-    }
-
-    /**
-     * If enabled then the on completion process will run asynchronously by a separate thread from a thread pool.
-     * By default this is false, meaning the on completion process will run synchronously using the same caller thread as from the route.
-     *
-     * @return the builder
-     */
-    public OnCompletionDefinition parallelProcessing(boolean parallelProcessing) {
-        setParallelProcessing(parallelProcessing);
         return this;
     }
 

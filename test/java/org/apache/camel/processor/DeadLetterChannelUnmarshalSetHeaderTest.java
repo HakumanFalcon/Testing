@@ -24,7 +24,6 @@ import org.apache.camel.Exchange;
 import org.apache.camel.builder.RouteBuilder;
 import org.apache.camel.component.mock.MockEndpoint;
 import org.apache.camel.spi.DataFormat;
-import org.apache.camel.support.ServiceSupport;
 
 /**
  *
@@ -61,7 +60,7 @@ public class DeadLetterChannelUnmarshalSetHeaderTest extends ContextTestSupport 
         };
     }
 
-    private class MyDataFormat extends ServiceSupport implements DataFormat {
+    private class MyDataFormat implements DataFormat {
 
         @Override
         public void marshal(Exchange exchange, Object graph, OutputStream stream) throws Exception {
@@ -71,16 +70,6 @@ public class DeadLetterChannelUnmarshalSetHeaderTest extends ContextTestSupport 
         @Override
         public Object unmarshal(Exchange exchange, InputStream stream) throws Exception {
             throw new IllegalArgumentException("Damn");
-        }
-
-        @Override
-        protected void doStart() throws Exception {
-            // noop
-        }
-
-        @Override
-        protected void doStop() throws Exception {
-            // noop
         }
     }
 }

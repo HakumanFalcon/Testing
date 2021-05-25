@@ -30,8 +30,10 @@ import static org.apache.camel.builder.Builder.constant;
 import static org.apache.camel.builder.PredicateBuilder.in;
 import static org.apache.camel.builder.PredicateBuilder.not;
 
+/**
+ * @version 
+ */
 public class PredicateBuilderTest extends TestSupport {
-
     protected Exchange exchange = new DefaultExchange(new DefaultCamelContext());
 
     public void testRegexPredicates() throws Exception {
@@ -89,11 +91,9 @@ public class PredicateBuilderTest extends TestSupport {
 
         // check method signature with varargs
         assertMatches(PredicateBuilder.in(p1, p2, p3));
-        assertMatches(PredicateBuilder.or(p1, p2, p3));
 
         // maybe a list of predicates?
         assertMatches(PredicateBuilder.in(Arrays.asList(p1, p2, p3)));
-        assertMatches(PredicateBuilder.or(Arrays.asList(p1, p2, p3)));
     }
 
     public void testCompoundAndOrPredicates() throws Exception {

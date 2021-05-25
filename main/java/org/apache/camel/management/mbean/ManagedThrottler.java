@@ -41,34 +41,22 @@ public class ManagedThrottler extends ManagedProcessor implements ManagedThrottl
     }
 
     public long getMaximumRequestsPerPeriod() {
-        return throttler.getCurrentMaximumRequestsPerPeriod();
+        return getThrottler().getCurrentMaximumRequestsPerPeriod();
     }
 
     public void setMaximumRequestsPerPeriod(long maximumRequestsPerPeriod) {
-        throttler.setMaximumRequestsPerPeriodExpression(constant(maximumRequestsPerPeriod));
+        getThrottler().setMaximumRequestsPerPeriodExpression(constant(maximumRequestsPerPeriod));
     }
 
     public long getTimePeriodMillis() {
-        return throttler.getTimePeriodMillis();
+        return getThrottler().getTimePeriodMillis();
     }
 
     public void setTimePeriodMillis(long timePeriodMillis) {
-        throttler.setTimePeriodMillis(timePeriodMillis);
+        getThrottler().setTimePeriodMillis(timePeriodMillis);
     }
 
     public int getThrottledCount() {
-        return throttler.getDelayedCount();
-    }
-
-    public Boolean isAsyncDelayed() {
-        return throttler.isAsyncDelayed();
-    }
-
-    public Boolean isCallerRunsWhenRejected() {
-        return throttler.isCallerRunsWhenRejected();
-    }
-
-    public Boolean isRejectExecution() {
-        return throttler.isRejectExecution();
+        return getThrottler().getDelayedCount();
     }
 }

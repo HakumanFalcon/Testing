@@ -388,10 +388,7 @@ public class CamelInternalProcessor extends DelegateAsyncProcessor {
 
     /**
      * Advice to inject the current {@link RouteContext} into the {@link UnitOfWork} on the {@link Exchange}
-     *
-     * @deprecated this logic has been merged into {@link org.apache.camel.processor.CamelInternalProcessor.UnitOfWorkProcessorAdvice}
      */
-    @Deprecated
     public static class RouteContextAdvice implements CamelInternalProcessorAdvice<UnitOfWork> {
 
         private final RouteContext routeContext;
@@ -607,55 +604,37 @@ public class CamelInternalProcessor extends DelegateAsyncProcessor {
      */
     public static class UnitOfWorkProcessorAdvice implements CamelInternalProcessorAdvice<UnitOfWork> {
 
-        private final RouteContext routeContext;
+        private final String routeId;
 
-        public UnitOfWorkProcessorAdvice(RouteContext routeContext) {
-            this.routeContext = routeContext;
+        public UnitOfWorkProcessorAdvice(String routeId) {
+            this.routeId = routeId;
         }
 
         @Override
         public UnitOfWork before(Exchange exchange) throws Exception {
             // if the exchange doesn't have from route id set, then set it if it originated
             // from this unit of work
-            if (routeContext != null && exchange.getFromRouteId() == null) {
-                String routeId = routeContext.getRoute().idOrCreate(routeContext.getCamelContext().getNodeIdFactory());
+            if (routeId != null && exchange.getFromRouteId() == null) {
                 exchange.setFromRouteId(routeId);
             }
-
-            // only return UnitOfWork if we created a new as then its us that handle the lifecycle to done the created UoW
-            UnitOfWork created = null;
 
             if (exchange.getUnitOfWork() == null) {
                 // If there is no existing UoW, then we should start one and
                 // terminate it once processing is completed for the exchange.
-                created = createUnitOfWork(exchange);
-                exchange.setUnitOfWork(created);
-                created.start();
+                UnitOfWork uow = createUnitOfWork(exchange);
+                exchange.setUnitOfWork(uow);
+                uow.start();
+                return uow;
             }
 
-            // for any exchange we should push/pop route context so we can keep track of which route we are routing
-            if (routeContext != null) {
-                UnitOfWork existing = exchange.getUnitOfWork();
-                if (existing != null) {
-                    existing.pushRouteContext(routeContext);
-                }
-            }
-
-            return created;
+            return null;
         }
 
         @Override
         public void after(Exchange exchange, UnitOfWork uow) throws Exception {
-            UnitOfWork existing = exchange.getUnitOfWork();
-
             // execute done on uow if we created it, and the consumer is not doing it
             if (uow != null) {
                 UnitOfWorkHelper.doneUow(uow, exchange);
-            }
-
-            // after UoW is done lets pop the route context which must be done on every existing UoW
-            if (routeContext != null && existing != null) {
-                existing.popRouteContext();
             }
         }
 
@@ -672,8 +651,8 @@ public class CamelInternalProcessor extends DelegateAsyncProcessor {
 
         private final UnitOfWork parent;
 
-        public ChildUnitOfWorkProcessorAdvice(RouteContext routeContext, UnitOfWork parent) {
-            super(routeContext);
+        public ChildUnitOfWorkProcessorAdvice(String routeId, UnitOfWork parent) {
+            super(routeId);
             this.parent = parent;
         }
 

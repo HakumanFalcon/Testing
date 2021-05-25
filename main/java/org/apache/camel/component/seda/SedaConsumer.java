@@ -109,14 +109,7 @@ public class SedaConsumer extends ServiceSupport implements Consumer, Runnable, 
     }
 
     @Override
-    public void prepareShutdown(boolean suspendOnly, boolean forced) {
-        // if we are suspending then we want to keep the thread running but just not route the exchange
-        // this logic is only when we stop or shutdown the consumer
-        if (suspendOnly) {
-            LOG.debug("Skip preparing to shutdown as consumer is being suspended");
-            return;
-        }
-
+    public void prepareShutdown(boolean forced) {
         // signal we want to shutdown
         shutdownPending = true;
         forceShutdown = forced;
@@ -174,8 +167,8 @@ public class SedaConsumer extends ServiceSupport implements Consumer, Runnable, 
                 continue;
             }
 
-            // do not poll if we are suspended or starting again after resuming
-            if (isSuspending() || isSuspended() || isStarting()) {
+            // do not poll if we are suspended
+            if (isSuspending() || isSuspended()) {
                 if (shutdownPending && queue.isEmpty()) {
                     LOG.trace("Consumer is suspended and shutdown is pending, so this consumer thread is breaking out because the task queue is empty.");
                     // we want to shutdown so break out if there queue is empty
@@ -319,7 +312,7 @@ public class SedaConsumer extends ServiceSupport implements Consumer, Runnable, 
 
     @Override
     protected void doResume() throws Exception {
-        endpoint.onStarted(this);
+        doStart();
     }
 
     protected void doStop() throws Exception {

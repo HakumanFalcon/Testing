@@ -152,18 +152,6 @@ public abstract class MessageSupport implements Message {
             }
         }
 
-        copyAttachments(that);
-    }
-
-    public Exchange getExchange() {
-        return exchange;
-    }
-
-    public void setExchange(Exchange exchange) {
-        this.exchange = exchange;
-    }
-    
-    public void copyAttachments(Message that) {
         // the attachments may be the same instance if the end user has made some mistake
         // and set the OUT message with the same attachment instance of the IN message etc
         boolean sameAttachments = false;
@@ -180,6 +168,14 @@ public abstract class MessageSupport implements Message {
                 getAttachments().putAll(that.getAttachments());
             }
         }
+    }
+
+    public Exchange getExchange() {
+        return exchange;
+    }
+
+    public void setExchange(Exchange exchange) {
+        this.exchange = exchange;
     }
 
     /**

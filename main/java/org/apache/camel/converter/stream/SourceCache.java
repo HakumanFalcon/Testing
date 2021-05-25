@@ -19,7 +19,6 @@ package org.apache.camel.converter.stream;
 import java.io.IOException;
 import java.io.OutputStream;
 
-import org.apache.camel.Exchange;
 import org.apache.camel.StreamCache;
 import org.apache.camel.StringSource;
 import org.apache.camel.util.IOHelper;
@@ -45,7 +44,7 @@ public final class SourceCache extends StringSource implements StreamCache {
         IOHelper.copy(getInputStream(), os);
     }
 
-    public StreamCache copy(Exchange exchange) throws IOException {
+    public StreamCache copy() throws IOException {
         return new SourceCache(getText());
     }
 

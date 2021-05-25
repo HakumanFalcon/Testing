@@ -54,11 +54,11 @@ public class BeanWithExchangeExceptionAnnotationTest extends ContextTestSupport 
                 onException(MyCustomException.class).
                     maximumRedeliveries(0).
                     handled(true).
-                    bean("myBean", "handleException").
+                    beanRef("myBean", "handleException").
                     to("mock:error");
                 
                 from("direct:start").
-                    bean("myBean", "throwException").
+                    beanRef("myBean", "throwException").
                     to("mock:result");
             }
         };

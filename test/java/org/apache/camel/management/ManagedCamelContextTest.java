@@ -17,14 +17,13 @@
 package org.apache.camel.management;
 
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+
 import javax.management.MBeanServer;
 import javax.management.ObjectName;
 
 import org.apache.camel.CamelContext;
-import org.apache.camel.api.management.mbean.ManagedCamelContextMBean;
 import org.apache.camel.builder.RouteBuilder;
 import org.apache.camel.component.mock.MockEndpoint;
 import org.apache.camel.util.StringHelper;
@@ -40,23 +39,6 @@ public class ManagedCamelContextTest extends ManagementTestSupport {
         // to force a different management name than the camel id
         context.getManagementNameStrategy().setNamePattern("19-#name#");
         return context;
-    }
-
-    public void testManagedCamelContextClient() throws Exception {
-        // JMX tests dont work well on AIX CI servers (hangs them)
-        if (isPlatform("aix")) {
-            return;
-        }
-
-        ManagedCamelContextMBean client = context.getManagedCamelContext();
-        assertNotNull(client);
-
-        assertEquals("camel-1", client.getCamelId());
-        assertEquals("Started", client.getState());
-
-        List<String> names = client.findComponentNames();
-        assertNotNull(names);
-        assertTrue(names.contains("mock"));
     }
 
     public void testManagedCamelContext() throws Exception {
@@ -75,9 +57,6 @@ public class ManagedCamelContextTest extends ManagementTestSupport {
 
         String managementName = (String) mbeanServer.getAttribute(on, "ManagementName");
         assertEquals("19-camel-1", managementName);
-
-        String level = (String) mbeanServer.getAttribute(on, "ManagementStatisticsLevel");
-        assertEquals("Default", level);
 
         String uptime = (String) mbeanServer.getAttribute(on, "Uptime");
         assertNotNull(uptime);
@@ -268,16 +247,18 @@ public class ManagedCamelContextTest extends ManagementTestSupport {
         int pos2 = json.indexOf("groupDelay");
         assertTrue("LoggerName should come before groupDelay", pos < pos2);
 
-        assertEquals(6, StringHelper.countChar(json, '{'));
-        assertEquals(6, StringHelper.countChar(json, '}'));
+        assertEquals(8, StringHelper.countChar(json, '{'));
+        assertEquals(8, StringHelper.countChar(json, '}'));
 
         assertTrue(json.contains("\"scheme\": \"log\""));
         assertTrue(json.contains("\"label\": \"core,monitoring\""));
 
-        assertTrue(json.contains("\"loggerName\": { \"kind\": \"path\", \"group\": \"producer\", \"required\": \"true\""));
-        assertTrue(json.contains("\"groupSize\": { \"kind\": \"parameter\", \"group\": \"producer\", \"type\": \"integer\","
-                + " \"javaType\": \"java.lang.Integer\", \"deprecated\": \"false\", \"value\": \"5\""));
-
+        assertTrue(json.contains("\"groupDelay\": { \"kind\": \"parameter\", \"type\": \"integer\", \"javaType\": \"java.lang.Long\", \"deprecated\": \"false\", \"value\": \"2000\","
+                + " \"description\": \"Set the initial delay for stats (in millis)\" }"));
+        assertTrue(json.contains("\"groupSize\": { \"kind\": \"parameter\", \"type\": \"integer\", \"javaType\": \"java.lang.Integer\", \"deprecated\": \"false\", \"value\": \"5\","
+                + " \"description\": \"An integer that specifies a group size for throughput logging.\" }"));
+        assertTrue(json.contains("\"loggerName\": { \"kind\": \"path\", \"required\": \"true\", \"type\": \"string\", \"javaType\": \"java.lang.String\", \"deprecated\": \"false\","
+                + " \"value\": \"foo\", \"description\": \"The logger name to use\" }"));
         // and we should also have the javadoc documentation
         assertTrue(json.contains("Set the initial delay for stats (in millis)"));
     }
@@ -301,15 +282,19 @@ public class ManagedCamelContextTest extends ManagementTestSupport {
         int pos2 = json.indexOf("groupDelay");
         assertTrue("LoggerName should come before groupDelay", pos < pos2);
 
-        assertEquals(30, StringHelper.countChar(json, '{'));
-        assertEquals(30, StringHelper.countChar(json, '}'));
+        assertEquals(14, StringHelper.countChar(json, '{'));
+        assertEquals(14, StringHelper.countChar(json, '}'));
 
         assertTrue(json.contains("\"scheme\": \"log\""));
         assertTrue(json.contains("\"label\": \"core,monitoring\""));
 
-        assertTrue(json.contains("\"loggerName\": { \"kind\": \"path\", \"group\": \"producer\", \"required\": \"true\""));
-        assertTrue(json.contains("\"groupSize\": { \"kind\": \"parameter\", \"group\": \"producer\", \"type\": \"integer\","
-                + " \"javaType\": \"java.lang.Integer\", \"deprecated\": \"false\", \"value\": \"5\""));
+        assertTrue(json.contains("\"groupDelay\": { \"kind\": \"parameter\", \"type\": \"integer\", \"javaType\": \"java.lang.Long\", \"deprecated\": \"false\", \"value\": \"2000\","
+                + " \"description\": \"Set the initial delay for stats (in millis)\" }"));
+        assertTrue(json.contains("\"groupSize\": { \"kind\": \"parameter\", \"type\": \"integer\", \"javaType\": \"java.lang.Integer\", \"deprecated\": \"false\", \"value\": \"5\","
+                + " \"description\": \"An integer that specifies a group size for throughput logging.\" }"));
+        assertTrue(json.contains("\"loggerName\": { \"kind\": \"path\", \"required\": \"true\", \"type\": \"string\", \"javaType\": \"java.lang.String\", \"deprecated\": \"false\","
+                + " \"value\": \"foo\", \"description\": \"The logger name to use\" }"));
+        assertTrue(json.contains("\"marker\": { \"kind\": \"parameter\", \"type\": \"string\", \"javaType\": \"java.lang.String\""));
         // and we should also have the javadoc documentation
         assertTrue(json.contains("Set the initial delay for stats (in millis)"));
     }

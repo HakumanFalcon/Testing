@@ -40,12 +40,10 @@ public class MainExample {
         main = new Main();
         // enable hangup support so you can press ctrl + c to terminate the JVM
         main.enableHangupSupport();
-        // bind MyBean into the registry
+        // bind MyBean into the registery
         main.bind("foo", new MyBean());
         // add routes
         main.addRouteBuilder(new MyRouteBuilder());
-        // add event listener
-        main.addMainListener(new Events());
 
         // run until you terminate the JVM
         System.out.println("Starting Camel. Use ctrl + c to terminate the JVM.\n");
@@ -61,26 +59,13 @@ public class MainExample {
                         System.out.println("Invoked timer at " + new Date());
                     }
                 })
-                .bean("foo");
+                .beanRef("foo");
         }
     }
 
     public static class MyBean {
         public void callMe() {
-            System.out.println("MyBean.callMe method has been called");
-        }
-    }
-
-    public static class Events extends MainListenerSupport {
-
-        @Override
-        public void afterStart(MainSupport main) {
-            System.out.println("MainExample with Camel is now started!");
-        }
-
-        @Override
-        public void beforeStop(MainSupport main) {
-            System.out.println("MainExample with Camel is now being stopped!");
+            System.out.println("MyBean.calleMe method has been called");
         }
     }
 }

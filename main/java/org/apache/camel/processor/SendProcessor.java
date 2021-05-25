@@ -32,7 +32,6 @@ import org.apache.camel.ServicePoolAware;
 import org.apache.camel.Traceable;
 import org.apache.camel.impl.InterceptSendToEndpoint;
 import org.apache.camel.impl.ProducerCache;
-import org.apache.camel.spi.IdAware;
 import org.apache.camel.support.ServiceSupport;
 import org.apache.camel.util.AsyncProcessorConverterHelper;
 import org.apache.camel.util.AsyncProcessorHelper;
@@ -46,21 +45,18 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * Processor for forwarding exchanges to a static endpoint destination.
+ * Processor for forwarding exchanges to an endpoint destination.
  *
- * @see SendDynamicProcessor
+ * @version 
  */
-public class SendProcessor extends ServiceSupport implements AsyncProcessor, Traceable, EndpointAware, IdAware {
+public class SendProcessor extends ServiceSupport implements AsyncProcessor, Traceable, EndpointAware {
     protected static final Logger LOG = LoggerFactory.getLogger(SendProcessor.class);
-    protected transient String traceLabelToString;
     protected final CamelContext camelContext;
     protected final ExchangePattern pattern;
     protected ProducerCache producerCache;
     protected AsyncProcessor producer;
     protected Endpoint destination;
     protected ExchangePattern destinationExchangePattern;
-    protected String id;
-    protected volatile long counter;
 
     public SendProcessor(Endpoint destination) {
         this(destination, null);
@@ -85,14 +81,6 @@ public class SendProcessor extends ServiceSupport implements AsyncProcessor, Tra
         return "sendTo(" + destination + (pattern != null ? " " + pattern : "") + ")";
     }
 
-    public String getId() {
-        return id;
-    }
-
-    public void setId(String id) {
-        this.id = id;
-    }
-
     /**
      * @deprecated not longer supported.
      */
@@ -101,10 +89,7 @@ public class SendProcessor extends ServiceSupport implements AsyncProcessor, Tra
     }
 
     public String getTraceLabel() {
-        if (traceLabelToString == null) {
-            traceLabelToString = URISupport.sanitizeUri(destination.getEndpointUri());
-        }
-        return traceLabelToString;
+        return URISupport.sanitizeUri(destination.getEndpointUri());
     }
 
     @Override
@@ -123,11 +108,10 @@ public class SendProcessor extends ServiceSupport implements AsyncProcessor, Tra
             return true;
         }
 
+
         // we should preserve existing MEP so remember old MEP
         // if you want to permanently to change the MEP then use .setExchangePattern in the DSL
         final ExchangePattern existingPattern = exchange.getPattern();
-
-        counter++;
 
         // if we have a producer then use that as its optimized
         if (producer != null) {
@@ -200,14 +184,6 @@ public class SendProcessor extends ServiceSupport implements AsyncProcessor, Tra
         // set property which endpoint we send to
         exchange.setProperty(Exchange.TO_ENDPOINT, destination.getEndpointUri());
         return exchange;
-    }
-
-    public long getCounter() {
-        return counter;
-    }
-
-    public void reset() {
-        counter = 0;
     }
 
     protected void doStart() throws Exception {

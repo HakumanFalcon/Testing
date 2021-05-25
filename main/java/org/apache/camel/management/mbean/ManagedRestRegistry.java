@@ -24,7 +24,6 @@ import javax.management.openmbean.TabularData;
 import javax.management.openmbean.TabularDataSupport;
 
 import org.apache.camel.CamelContext;
-import org.apache.camel.Producer;
 import org.apache.camel.api.management.ManagedResource;
 import org.apache.camel.api.management.mbean.CamelOpenMBeanTypes;
 import org.apache.camel.api.management.mbean.ManagedRestRegistryMBean;
@@ -38,7 +37,6 @@ import org.apache.camel.util.ObjectHelper;
 public class ManagedRestRegistry extends ManagedService implements ManagedRestRegistryMBean {
 
     private final RestRegistry registry;
-    private transient Producer apiProducer;
 
     public ManagedRestRegistry(CamelContext context, RestRegistry registry) {
         super(context, registry);
@@ -84,10 +82,4 @@ public class ManagedRestRegistry extends ManagedService implements ManagedRestRe
             throw ObjectHelper.wrapRuntimeCamelException(e);
         }
     }
-
-    @Override
-    public String apiDocAsJson() {
-        return registry.apiDocAsJson();
-    }
-
 }

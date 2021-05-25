@@ -22,6 +22,7 @@ import javax.xml.bind.annotation.XmlTransient;
 
 import org.apache.camel.CamelContext;
 import org.apache.camel.CamelContextAware;
+import org.apache.camel.Component;
 import org.apache.camel.Consume;
 import org.apache.camel.Consumer;
 import org.apache.camel.ConsumerTemplate;
@@ -38,7 +39,6 @@ import org.apache.camel.component.bean.BeanInfo;
 import org.apache.camel.component.bean.BeanProcessor;
 import org.apache.camel.component.bean.ProxyHelper;
 import org.apache.camel.processor.CamelInternalProcessor;
-import org.apache.camel.processor.DeferServiceFactory;
 import org.apache.camel.processor.UnitOfWorkProducer;
 import org.apache.camel.util.CamelContextHelper;
 import org.apache.camel.util.IntrospectionSupport;
@@ -105,7 +105,7 @@ public class CamelPostProcessorHelper implements CamelContextAware {
                 Processor processor = createConsumerProcessor(bean, method, endpoint);
                 Consumer consumer = endpoint.createConsumer(processor);
                 LOG.debug("Created processor: {} for consumer: {}", processor, consumer);
-                startService(consumer, endpoint.getCamelContext(), bean, beanName);
+                startService(consumer, bean, beanName);
             } catch (Exception e) {
                 throw ObjectHelper.wrapRuntimeCamelException(e);
             }
@@ -115,18 +115,12 @@ public class CamelPostProcessorHelper implements CamelContextAware {
     /**
      * Stats the given service
      */
-    protected void startService(Service service, CamelContext camelContext, Object bean, String beanName) throws Exception {
-        // defer starting the service until CamelContext has started all its initial services
-        if (camelContext != null) {
-            camelContext.deferStartService(service, true);
+    protected void startService(Service service, Object bean, String beanName) throws Exception {
+        if (isSingleton(bean, beanName)) {
+            getCamelContext().addService(service);
         } else {
-            // mo CamelContext then start service manually
-            ServiceHelper.startService(service);
-        }
-
-        boolean singleton = isSingleton(bean, beanName);
-        if (!singleton) {
             LOG.debug("Service is not singleton so you must remember to stop it manually {}", service);
+            ServiceHelper.startService(service);
         }
     }
 
@@ -287,12 +281,10 @@ public class CamelPostProcessorHelper implements CamelContextAware {
                                                                String injectionPointName, Object bean) {
         // endpoint is optional for this injection point
         Endpoint endpoint = getEndpointInjection(bean, endpointUri, endpointRef, endpointProperty, injectionPointName, false);
-        CamelContext context = endpoint != null ? endpoint.getCamelContext() : getCamelContext();
-        ProducerTemplate answer = new DefaultProducerTemplate(context, endpoint);
+        ProducerTemplate answer = new DefaultProducerTemplate(getCamelContext(), endpoint);
         // start the template so its ready to use
         try {
-            // no need to defer the template as it can adjust to the endpoint at runtime
-            startService(answer, context, bean, null);
+            answer.start();
         } catch (Exception e) {
             throw ObjectHelper.wrapRuntimeCamelException(e);
         }
@@ -307,7 +299,7 @@ public class CamelPostProcessorHelper implements CamelContextAware {
         ConsumerTemplate answer = new DefaultConsumerTemplate(getCamelContext());
         // start the template so its ready to use
         try {
-            startService(answer, null, null, null);
+            answer.start();
         } catch (Exception e) {
             throw ObjectHelper.wrapRuntimeCamelException(e);
         }
@@ -319,9 +311,9 @@ public class CamelPostProcessorHelper implements CamelContextAware {
      */
     protected PollingConsumer createInjectionPollingConsumer(Endpoint endpoint, Object bean, String beanName) {
         try {
-            PollingConsumer consumer = endpoint.createPollingConsumer();
-            startService(consumer, endpoint.getCamelContext(), bean, beanName);
-            return consumer;
+            PollingConsumer pollingConsumer = endpoint.createPollingConsumer();
+            startService(pollingConsumer, bean, beanName);
+            return pollingConsumer;
         } catch (Exception e) {
             throw ObjectHelper.wrapRuntimeCamelException(e);
         }
@@ -332,7 +324,8 @@ public class CamelPostProcessorHelper implements CamelContextAware {
      */
     protected Producer createInjectionProducer(Endpoint endpoint, Object bean, String beanName) {
         try {
-            Producer producer = DeferServiceFactory.createProducer(endpoint);
+            Producer producer = endpoint.createProducer();
+            startService(producer, bean, beanName);
             return new UnitOfWorkProducer(producer);
         } catch (Exception e) {
             throw ObjectHelper.wrapRuntimeCamelException(e);

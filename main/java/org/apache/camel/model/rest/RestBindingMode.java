@@ -23,7 +23,7 @@ import org.apache.camel.spi.Metadata;
 
 @Metadata(label = "rest")
 @XmlType
-@XmlEnum
+@XmlEnum(String.class)
 public enum RestBindingMode {
 
     auto, off, json, xml, json_xml

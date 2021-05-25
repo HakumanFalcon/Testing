@@ -81,7 +81,6 @@ import org.apache.camel.processor.interceptor.BacklogDebugger;
 import org.apache.camel.processor.interceptor.BacklogTracer;
 import org.apache.camel.processor.interceptor.Tracer;
 import org.apache.camel.spi.AsyncProcessorAwaitManager;
-import org.apache.camel.spi.DataFormat;
 import org.apache.camel.spi.EventNotifier;
 import org.apache.camel.spi.InflightRepository;
 import org.apache.camel.spi.LifecycleStrategy;
@@ -119,8 +118,8 @@ public class DefaultManagementLifecycleStrategy extends ServiceSupport implement
     private final Map<Processor, KeyValueHolder<ProcessorDefinition<?>, InstrumentationProcessor>> wrappedProcessors =
             new HashMap<Processor, KeyValueHolder<ProcessorDefinition<?>, InstrumentationProcessor>>();
     private final List<PreRegisterService> preServices = new ArrayList<PreRegisterService>();
-    private final TimerListenerManager loadTimer = new ManagedLoadTimer();
-    private final TimerListenerManagerStartupListener loadTimerStartupListener = new TimerListenerManagerStartupListener();
+    private final TimerListenerManager timerListenerManager = new TimerListenerManager();
+    private final TimerListenerManagerStartupListener timerManagerStartupListener = new TimerListenerManagerStartupListener();
     private volatile CamelContext camelContext;
     private volatile ManagedCamelContext camelContextMBean;
     private volatile boolean initialized;
@@ -450,8 +449,6 @@ public class DefaultManagementLifecycleStrategy extends ServiceSupport implement
                 managedBacklogDebuggers.put(backlogDebugger, md);
             }
             return md;
-        } else if (service instanceof DataFormat) {
-            answer = getManagementObjectStrategy().getManagedObjectForDataFormat(context, (DataFormat) service);
         } else if (service instanceof Producer) {
             answer = getManagementObjectStrategy().getManagedObjectForProducer(context, (Producer) service);
         } else if (service instanceof Consumer) {
@@ -761,7 +758,7 @@ public class DefaultManagementLifecycleStrategy extends ServiceSupport implement
         // that then delegates to the real mbean which we register later in the onServiceAdd method
         DelegatePerformanceCounter pc = new DelegatePerformanceCounter();
         // set statistics enabled depending on the option
-        boolean enabled = camelContext.getManagementStrategy().getManagementAgent().getStatisticsLevel().isDefaultOrExtended();
+        boolean enabled = camelContext.getManagementStrategy().getStatisticsLevel() == ManagementStatisticsLevel.All;
         pc.setStatisticsEnabled(enabled);
 
         // and add it as a a registered counter that will be used lazy when Camel
@@ -796,9 +793,7 @@ public class DefaultManagementLifecycleStrategy extends ServiceSupport implement
         }
 
         // only if custom id assigned
-        boolean only = getManagementStrategy().getManagementAgent().getOnlyRegisterProcessorWithCustomId() != null
-                && getManagementStrategy().getManagementAgent().getOnlyRegisterProcessorWithCustomId();
-        if (only) {
+        if (getManagementStrategy().isOnlyManageProcessorWithCustomId()) {
             return processor.hasCustomIdAssigned();
         }
 
@@ -826,7 +821,7 @@ public class DefaultManagementLifecycleStrategy extends ServiceSupport implement
         getManagementStrategy().manageObject(me);
         if (me instanceof TimerListener) {
             TimerListener timer = (TimerListener) me;
-            loadTimer.addTimerListener(timer);
+            timerListenerManager.addTimerListener(timer);
         }
     }
 
@@ -839,7 +834,7 @@ public class DefaultManagementLifecycleStrategy extends ServiceSupport implement
     protected void unmanageObject(Object me) throws Exception {
         if (me instanceof TimerListener) {
             TimerListener timer = (TimerListener) me;
-            loadTimer.removeTimerListener(timer);
+            timerListenerManager.removeTimerListener(timer);
         }
         getManagementStrategy().unmanageObject(me);
     }
@@ -905,7 +900,7 @@ public class DefaultManagementLifecycleStrategy extends ServiceSupport implement
         ObjectHelper.notNull(camelContext, "CamelContext");
 
         // defer starting the timer manager until CamelContext has been fully started
-        camelContext.addStartupListener(loadTimerStartupListener);
+        camelContext.addStartupListener(timerManagerStartupListener);
     }
 
     private final class TimerListenerManagerStartupListener implements StartupListener {
@@ -913,16 +908,15 @@ public class DefaultManagementLifecycleStrategy extends ServiceSupport implement
         @Override
         public void onCamelContextStarted(CamelContext context, boolean alreadyStarted) throws Exception {
             // we are disabled either if configured explicit, or if level is off
-            boolean load = camelContext.getManagementStrategy().getManagementAgent().getLoadStatisticsEnabled() != null
-                    && camelContext.getManagementStrategy().getManagementAgent().getLoadStatisticsEnabled();
-            boolean disabled = !load || camelContext.getManagementStrategy().getStatisticsLevel() == ManagementStatisticsLevel.Off;
+            boolean disabled = !camelContext.getManagementStrategy().isLoadStatisticsEnabled()
+                    || camelContext.getManagementStrategy().getStatisticsLevel() == ManagementStatisticsLevel.Off;
 
             LOG.debug("Load performance statistics {}", disabled ? "disabled" : "enabled");
             if (!disabled) {
                 // must use 1 sec interval as the load statistics is based on 1 sec calculations
-                loadTimer.setInterval(1000);
+                timerListenerManager.setInterval(1000);
                 // we have to defer enlisting timer lister manager as a service until CamelContext has been started
-                getCamelContext().addService(loadTimer);
+                getCamelContext().addService(timerListenerManager);
             }
         }
     }

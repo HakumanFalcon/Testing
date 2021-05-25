@@ -18,11 +18,8 @@ package org.apache.camel.spi;
 
 import java.util.List;
 
-import org.apache.camel.LoggingLevel;
 import org.apache.camel.StaticService;
 import org.apache.camel.TypeConverter;
-import org.apache.camel.TypeConverterExists;
-import org.apache.camel.TypeConverters;
 
 /**
  * Registry for type converters.
@@ -83,10 +80,7 @@ public interface TypeConverterRegistry extends StaticService {
     }
 
     /**
-     * Registers a new type converter.
-     * <p/>
-     * This method may throw {@link org.apache.camel.TypeConverterExistsException} if configured to fail if an existing
-     * type converter already exists
+     * Registers a new type converter
      *
      * @param toType        the type to convert to
      * @param fromType      the type to convert from
@@ -102,13 +96,6 @@ public interface TypeConverterRegistry extends StaticService {
      * @return <tt>true</tt> if removed, <tt>false</tt> if the type converter didn't exist
      */
     boolean removeTypeConverter(Class<?> toType, Class<?> fromType);
-
-    /**
-     * Registers all the type converters from the class, each converter must be implemented as a method and annotated with {@link org.apache.camel.Converter}.
-     *
-     * @param typeConverters class which implements the type converters
-     */
-    void addTypeConverters(TypeConverters typeConverters);
 
     /**
      * Registers a new fallback type converter
@@ -161,33 +148,5 @@ public interface TypeConverterRegistry extends StaticService {
      * @return number of type converters in the registry.
      */
     int size();
-
-    /**
-     * The logging level to use when logging that a type converter already exists when attempting to add a duplicate type converter.
-     * <p/>
-     * The default logging level is <tt>WARN</tt>
-     */
-    LoggingLevel getTypeConverterExistsLoggingLevel();
-
-    /**
-     * The logging level to use when logging that a type converter already exists when attempting to add a duplicate type converter.
-     * <p/>
-     * The default logging level is <tt>WARN</tt>
-     */
-    void setTypeConverterExistsLoggingLevel(LoggingLevel typeConverterExistsLoggingLevel);
-
-    /**
-     * What should happen when attempting to add a duplicate type converter.
-     * <p/>
-     * The default behavior is to override the existing.
-     */
-    TypeConverterExists getTypeConverterExists();
-
-    /**
-     * What should happen when attempting to add a duplicate type converter.
-     * <p/>
-     * The default behavior is to override the existing.
-     */
-    void setTypeConverterExists(TypeConverterExists typeConverterExists);
 
 }

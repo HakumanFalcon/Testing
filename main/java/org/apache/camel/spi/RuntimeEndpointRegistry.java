@@ -26,37 +26,6 @@ import org.apache.camel.StaticService;
 public interface RuntimeEndpointRegistry extends StaticService {
 
     /**
-     * Statistics gathered about the endpoint.
-     */
-    public interface Statistic {
-
-        /**
-         * The endpoint uri
-         */
-        String getUri();
-
-        /**
-         * The route id (if the endpoint is associated with a route)
-         */
-        String getRouteId();
-
-        /**
-         * Whether the endpoint is used as input our output
-         * <p/>
-         * The returned value can either be <tt>in</tt> or <tt>out</tt>
-         */
-        String getDirection();
-
-        /**
-         * Usage of the endpoint, such as how many messages it has received / sent to
-         * <p/>
-         * This information is only available if {@link org.apache.camel.ManagementStatisticsLevel} is configured as
-         * {@link org.apache.camel.ManagementStatisticsLevel#Extended}.
-         */
-        long getHits();
-    }
-
-    /**
      * Whether gathering runtime usage is enabled or not.
      */
     boolean isEnabled();
@@ -79,12 +48,7 @@ public interface RuntimeEndpointRegistry extends StaticService {
     void setLimit(int limit);
 
     /**
-     * Clears the registry
-     */
-    void clear();
-
-    /**
-     * Reset the statistic counters
+     * Clears the runtime usage gathered
      */
     void reset();
 
@@ -107,10 +71,4 @@ public interface RuntimeEndpointRegistry extends StaticService {
      * @param includeInputs whether to include route inputs
      */
     List<String> getEndpointsPerRoute(String routeId, boolean includeInputs);
-
-    /**
-     * Gets details about all the endpoint captured from the given route during runtime routing that are in-use of the routes.
-     */
-    List<Statistic> getEndpointStatistics();
-
 }

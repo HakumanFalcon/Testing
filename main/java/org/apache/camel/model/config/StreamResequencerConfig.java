@@ -29,7 +29,7 @@ import org.apache.camel.spi.Metadata;
 /**
  * Configures stream-processing resequence eip.
  */
-@Metadata(label = "eip,routing,resequence")
+@Metadata(label = "configuration,resequence")
 @XmlRootElement(name = "stream-config")
 @XmlAccessorType(XmlAccessType.FIELD)
 public class StreamResequencerConfig extends ResequencerConfig {

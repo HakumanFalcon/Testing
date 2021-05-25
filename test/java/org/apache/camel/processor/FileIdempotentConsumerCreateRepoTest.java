@@ -21,8 +21,6 @@ import java.io.File;
 import static java.util.UUID.randomUUID;
 
 import org.apache.camel.spi.IdempotentRepository;
-import org.apache.camel.util.FileUtil;
-import org.junit.After;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -30,25 +28,11 @@ import static org.apache.camel.processor.idempotent.FileIdempotentRepository.fil
 
 public class FileIdempotentConsumerCreateRepoTest extends Assert {
 
-    File store;
-
     @Test
     public void shouldCreateParentOfRepositoryFileStore() throws Exception {
-        File parentDirectory = new File("target/repositoryParent_" + randomUUID());
-        store = new File(parentDirectory, "store");
-        assertStoreExists(store);
-    }
-
-    @Test
-    public void shouldUseCurrentDirIfHasNoParentFile() throws Exception {
-        String storeFileName = "store" + randomUUID();
-        store = new File(storeFileName);
-        assertStoreExists(store);
-    }
-
-
-    private void assertStoreExists(File store) throws Exception {
         // Given
+        File parentDirectory = new File("target/repositoryParent_" + randomUUID());
+        File store = new File(parentDirectory, "store");
         IdempotentRepository<String> repo = fileIdempotentRepository(store);
 
         // must start repo
@@ -63,8 +47,4 @@ public class FileIdempotentConsumerCreateRepoTest extends Assert {
         repo.stop();
     }
 
-    @After
-    public void after() {
-        FileUtil.deleteFile(this.store);
-    }
 }

@@ -27,7 +27,6 @@ import org.apache.camel.TestSupport;
 import org.apache.camel.impl.DefaultCamelContext;
 import org.apache.camel.impl.DefaultMessage;
 import org.apache.camel.spi.DataFormat;
-import org.apache.camel.support.ServiceSupport;
 
 public class UnmarshalProcessorTest extends TestSupport {
 
@@ -73,7 +72,7 @@ public class UnmarshalProcessorTest extends TestSupport {
         assertSame("UnmarshalProcessor did not make use of the returned object being returned while unmarshalling", unmarshalled, exchange.getOut().getBody());
     }
 
-    private static class MyDataFormat extends ServiceSupport implements DataFormat {
+    private static class MyDataFormat implements DataFormat {
 
         private final Object object;
 
@@ -97,16 +96,6 @@ public class UnmarshalProcessorTest extends TestSupport {
         @Override
         public Object unmarshal(Exchange exchange, InputStream stream) throws Exception {
             return object;
-        }
-
-        @Override
-        protected void doStart() throws Exception {
-            // noop
-        }
-
-        @Override
-        protected void doStop() throws Exception {
-            // noop
         }
     }
 

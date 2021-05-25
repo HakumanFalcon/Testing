@@ -231,8 +231,7 @@ public final class ExchangeHelper {
     public static Exchange createCorrelatedCopy(Exchange exchange, boolean handover, boolean useSameMessageId) {
         String id = exchange.getExchangeId();
 
-        // make sure to do a safe copy as the correlated copy can be routed independently of the source.
-        Exchange copy = exchange.copy(true);
+        Exchange copy = exchange.copy();
         // do not reuse message id on copy
         if (!useSameMessageId) {
             if (copy.hasOut()) {
@@ -788,7 +787,7 @@ public final class ExchangeHelper {
     public static void prepareOutToIn(Exchange exchange) {
         // we are routing using pipes and filters so we need to manually copy OUT to IN
         if (exchange.hasOut()) {
-            exchange.setIn(exchange.getOut());
+            exchange.getIn().copyFrom(exchange.getOut());
             exchange.setOut(null);
         }
     }
@@ -862,32 +861,6 @@ public final class ExchangeHelper {
         if (old instanceof MessageSupport) {
             ((MessageSupport) old).setExchange(null);
         }
-    }
-
-    /**
-     * Gets the original IN {@link Message} this Unit of Work was started with.
-     * <p/>
-     * The original message is only returned if the option {@link org.apache.camel.RuntimeConfiguration#isAllowUseOriginalMessage()}
-     * is enabled. If its disabled, then <tt>null</tt> is returned.
-     *
-     * @return the original IN {@link Message}, or <tt>null</tt> if using original message is disabled.
-     */
-    public static Message getOriginalInMessage(Exchange exchange) {
-        Message answer = null;
-
-        // try parent first
-        UnitOfWork uow = exchange.getProperty(Exchange.PARENT_UNIT_OF_WORK, UnitOfWork.class);
-        if (uow != null) {
-            answer = uow.getOriginalInMessage();
-        }
-        // fallback to the current exchange
-        if (answer == null) {
-            uow = exchange.getUnitOfWork();
-            if (uow != null) {
-                answer = uow.getOriginalInMessage();
-            }
-        }
-        return answer;
     }
 
     @SuppressWarnings("unchecked")

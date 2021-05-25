@@ -27,7 +27,6 @@ import org.apache.camel.Message;
 import org.apache.camel.Traceable;
 import org.apache.camel.converter.stream.CachedOutputStream;
 import org.apache.camel.spi.DataFormat;
-import org.apache.camel.spi.IdAware;
 import org.apache.camel.support.ServiceSupport;
 import org.apache.camel.util.AsyncProcessorHelper;
 import org.apache.camel.util.ObjectHelper;
@@ -39,8 +38,7 @@ import org.apache.camel.util.ServiceHelper;
  *
  * @version
  */
-public class MarshalProcessor extends ServiceSupport implements AsyncProcessor, Traceable, CamelContextAware, IdAware {
-    private String id;
+public class MarshalProcessor extends ServiceSupport implements AsyncProcessor, Traceable, CamelContextAware {
     private CamelContext camelContext;
     private final DataFormat dataFormat;
 
@@ -103,14 +101,6 @@ public class MarshalProcessor extends ServiceSupport implements AsyncProcessor, 
         return "marshal[" + dataFormat + "]";
     }
 
-    public String getId() {
-        return id;
-    }
-
-    public void setId(String id) {
-        this.id = id;
-    }
-
     public CamelContext getCamelContext() {
         return camelContext;
     }
@@ -125,14 +115,11 @@ public class MarshalProcessor extends ServiceSupport implements AsyncProcessor, 
         if (dataFormat instanceof CamelContextAware) {
             ((CamelContextAware) dataFormat).setCamelContext(camelContext);
         }
-        // add dataFormat as service which will also start the service
-        // (false => we and handling the lifecycle of the dataFormat)
-        getCamelContext().addService(dataFormat, false);
+        ServiceHelper.startService(dataFormat);
     }
 
     @Override
     protected void doStop() throws Exception {
         ServiceHelper.stopService(dataFormat);
-        getCamelContext().removeService(dataFormat);
     }
 }

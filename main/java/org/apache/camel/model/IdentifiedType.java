@@ -21,6 +21,8 @@ import javax.xml.bind.annotation.XmlAccessorType;
 import javax.xml.bind.annotation.XmlAttribute;
 import javax.xml.bind.annotation.XmlID;
 import javax.xml.bind.annotation.XmlType;
+import javax.xml.bind.annotation.adapters.CollapsedStringAdapter;
+import javax.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
 
 /**
  * The unique identifier for a bean. The scope of the identifier is the enclosing bean factory.
@@ -42,6 +44,7 @@ import javax.xml.bind.annotation.XmlType;
 @XmlAccessorType(XmlAccessType.FIELD)
 public abstract class IdentifiedType {
     @XmlAttribute
+    @XmlJavaTypeAdapter(CollapsedStringAdapter.class)
     @XmlID
     private String id;
 

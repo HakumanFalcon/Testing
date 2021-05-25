@@ -87,7 +87,6 @@ public class InterceptSendToEndpointDefinition extends OutputDefinition<Intercep
     public Processor createProcessor(final RouteContext routeContext) throws Exception {
         // create the detour
         final Processor detour = this.createChildProcessor(routeContext, true);
-        final String matchURI = getUri();
 
         // register endpoint callback so we can proxy the endpoint
         routeContext.getCamelContext().addRegisterEndpointCallback(new EndpointStrategy() {
@@ -95,7 +94,7 @@ public class InterceptSendToEndpointDefinition extends OutputDefinition<Intercep
                 if (endpoint instanceof InterceptSendToEndpoint) {
                     // endpoint already decorated
                     return endpoint;
-                } else if (matchURI == null || matchPattern(routeContext.getCamelContext(), uri, matchURI)) {
+                } else if (getUri() == null || matchPattern(routeContext.getCamelContext(), uri, getUri())) {
                     // only proxy if the uri is matched decorate endpoint with our proxy
                     // should be false by default
                     boolean skip = getSkipSendToOriginalEndpoint() != null && getSkipSendToOriginalEndpoint();
@@ -117,7 +116,7 @@ public class InterceptSendToEndpointDefinition extends OutputDefinition<Intercep
         List<ProcessorDefinition<?>> outputs = route.getOutputs();
         outputs.remove(this);
 
-        return new InterceptEndpointProcessor(matchURI, detour);
+        return new InterceptEndpointProcessor(uri, detour);
     }
 
     /**

@@ -76,7 +76,7 @@ public class XsltRouteTest extends ContextTestSupport {
                 from("direct:start")
                     .to("xslt:org/apache/camel/component/xslt/transform.xsl")
                     .multicast()
-                        .bean("testBean")
+                        .beanRef("testBean")
                         .to("mock:result");
                
             }

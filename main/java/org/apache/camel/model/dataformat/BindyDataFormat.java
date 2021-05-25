@@ -34,12 +34,14 @@ import org.apache.camel.util.ObjectHelper;
  *
  * @version 
  */
-@Metadata(label = "dataformat,transformation,csv", title = "Bindy")
+@Metadata(label = "dataformat,transformation", title = "Bindy")
 @XmlRootElement(name = "bindy")
 @XmlAccessorType(XmlAccessType.FIELD)
 public class BindyDataFormat extends DataFormatDefinition {
     @XmlAttribute(required = true)
     private BindyType type;
+    @XmlAttribute
+    private String[] packages;
     @XmlAttribute
     private String classType;
     @XmlAttribute
@@ -62,6 +64,17 @@ public class BindyDataFormat extends DataFormatDefinition {
         this.type = type;
     }
 
+    public String[] getPackages() {
+        return packages;
+    }
+
+    /**
+     * The java package names to scan for model classes.
+     */
+    public void setPackages(String[] packages) {
+        this.packages = packages;
+    }
+
     public String getClassType() {
         return classType;
     }
@@ -73,9 +86,6 @@ public class BindyDataFormat extends DataFormatDefinition {
         this.classType = classType;
     }
 
-    /**
-     * Type of model class to use.
-     */
     public void setClassType(Class<?> classType) {
         this.clazz = classType;
     }
@@ -94,8 +104,11 @@ public class BindyDataFormat extends DataFormatDefinition {
     }
 
     protected DataFormat createDataFormat(RouteContext routeContext) {
-        if (classType == null && clazz == null) {
+        if (packages == null && (classType == null && clazz == null)) {
             throw new IllegalArgumentException("Either packages or classType must be specified");
+        }
+        if (packages != null && (classType != null || clazz != null)) {
+            throw new IllegalArgumentException("Only one of packages and classType must be specified");
         }
 
         if (type == BindyType.Csv) {
@@ -118,6 +131,7 @@ public class BindyDataFormat extends DataFormatDefinition {
 
     @Override
     protected void configureDataFormat(DataFormat dataFormat, CamelContext camelContext) {
+        setProperty(camelContext, dataFormat, "packages", packages);
         setProperty(camelContext, dataFormat, "locale", locale);
         setProperty(camelContext, dataFormat, "classType", clazz);
     }

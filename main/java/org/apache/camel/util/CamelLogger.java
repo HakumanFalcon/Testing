@@ -131,10 +131,6 @@ public class CamelLogger {
         this.log = LoggerFactory.getLogger(logName);
     }
 
-    public Marker getMarker() {
-        return marker;
-    }
-
     public void setMarker(Marker marker) {
         this.marker = marker;
     }

@@ -22,7 +22,6 @@ import org.apache.camel.Exchange;
 import org.apache.camel.LoggingLevel;
 import org.apache.camel.Processor;
 import org.apache.camel.spi.ExchangeFormatter;
-import org.apache.camel.spi.IdAware;
 import org.apache.camel.util.AsyncProcessorHelper;
 import org.apache.camel.util.CamelLogger;
 
@@ -35,8 +34,7 @@ import org.apache.camel.util.CamelLogger;
  *
  * @version 
  */
-public class CamelLogProcessor implements AsyncProcessor, IdAware {
-    private String id;
+public class CamelLogProcessor implements AsyncProcessor {
     private CamelLogger log;
     private ExchangeFormatter formatter;
 
@@ -57,14 +55,6 @@ public class CamelLogProcessor implements AsyncProcessor, IdAware {
     @Override
     public String toString() {
         return "Logger[" + log + "]";
-    }
-
-    public String getId() {
-        return id;
-    }
-
-    public void setId(String id) {
-        this.id = id;
     }
 
     public void process(Exchange exchange) throws Exception {

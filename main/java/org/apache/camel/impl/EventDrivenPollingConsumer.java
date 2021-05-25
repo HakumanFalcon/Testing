@@ -25,7 +25,6 @@ import java.util.concurrent.TimeUnit;
 import org.apache.camel.Consumer;
 import org.apache.camel.Endpoint;
 import org.apache.camel.Exchange;
-import org.apache.camel.ExchangeTimedOutException;
 import org.apache.camel.IsSingleton;
 import org.apache.camel.PollingConsumerPollingStrategy;
 import org.apache.camel.Processor;
@@ -48,7 +47,6 @@ public class EventDrivenPollingConsumer extends PollingConsumerSupport implement
     private ExceptionHandler interruptedExceptionHandler;
     private Consumer consumer;
     private boolean blockWhenFull = true;
-    private long blockTimeout;
     private final int queueCapacity;
 
     public EventDrivenPollingConsumer(Endpoint endpoint) {
@@ -79,14 +77,6 @@ public class EventDrivenPollingConsumer extends PollingConsumerSupport implement
 
     public void setBlockWhenFull(boolean blockWhenFull) {
         this.blockWhenFull = blockWhenFull;
-    }
-
-    public long getBlockTimeout() {
-        return blockTimeout;
-    }
-
-    public void setBlockTimeout(long blockTimeout) {
-        this.blockTimeout = blockTimeout;
     }
 
     /**
@@ -149,14 +139,7 @@ public class EventDrivenPollingConsumer extends PollingConsumerSupport implement
     public void process(Exchange exchange) throws Exception {
         if (isBlockWhenFull()) {
             try {
-                if (getBlockTimeout() <= 0) {
-                    queue.put(exchange);
-                } else {
-                    boolean added = queue.offer(exchange, getBlockTimeout(), TimeUnit.MILLISECONDS);
-                    if (!added) {
-                        throw new ExchangeTimedOutException(exchange, getBlockTimeout());
-                    }
-                }
+                queue.put(exchange);
             } catch (InterruptedException e) {
                 // ignore
                 log.debug("Put interrupted, are we stopping? {}", isStopping() || isStopped());

@@ -72,7 +72,7 @@ public class JmxInstrumentationOnlyRegisterProcessorWithCustomIdTest extends Con
     @Override
     protected CamelContext createCamelContext() throws Exception {
         CamelContext context = super.createCamelContext();
-        context.getManagementStrategy().getManagementAgent().setOnlyRegisterProcessorWithCustomId(true);
+        context.getManagementStrategy().onlyManageProcessorWithCustomId(true);
         return context;
     }
 

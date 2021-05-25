@@ -46,9 +46,7 @@ public class MemoryAggregationRepository extends ServiceSupport implements Optim
     }
 
     public Exchange add(CamelContext camelContext, String key, Exchange oldExchange, Exchange newExchange) {
-        if (!optimisticLocking) {
-            throw new UnsupportedOperationException();
-        }
+        if (!optimisticLocking) { throw new UnsupportedOperationException(); }
         if (oldExchange == null) {
             if (cache.putIfAbsent(key, newExchange) != null) {
                 throw new OptimisticLockingException();
@@ -62,9 +60,7 @@ public class MemoryAggregationRepository extends ServiceSupport implements Optim
     }
 
     public Exchange add(CamelContext camelContext, String key, Exchange exchange) {
-        if (optimisticLocking) { 
-            throw new UnsupportedOperationException(); 
-        }
+        if (optimisticLocking) { throw new UnsupportedOperationException(); }
         return cache.put(key, exchange);
     }
 

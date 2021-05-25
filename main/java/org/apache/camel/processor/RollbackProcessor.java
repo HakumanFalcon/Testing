@@ -21,7 +21,6 @@ import org.apache.camel.AsyncProcessor;
 import org.apache.camel.Exchange;
 import org.apache.camel.RollbackExchangeException;
 import org.apache.camel.Traceable;
-import org.apache.camel.spi.IdAware;
 import org.apache.camel.support.ServiceSupport;
 import org.apache.camel.util.AsyncProcessorHelper;
 
@@ -30,9 +29,8 @@ import org.apache.camel.util.AsyncProcessorHelper;
  *
  * @version 
  */
-public class RollbackProcessor extends ServiceSupport implements AsyncProcessor, Traceable, IdAware {
+public class RollbackProcessor extends ServiceSupport implements AsyncProcessor, Traceable {
 
-    private String id;
     private boolean markRollbackOnly;
     private boolean markRollbackOnlyLast;
     private String message;
@@ -86,18 +84,6 @@ public class RollbackProcessor extends ServiceSupport implements AsyncProcessor,
 
     public String getTraceLabel() {
         return "rollback";
-    }
-
-    public String getId() {
-        return id;
-    }
-
-    public void setId(String id) {
-        this.id = id;
-    }
-
-    public String getMessage() {
-        return message;
     }
 
     public boolean isMarkRollbackOnly() {

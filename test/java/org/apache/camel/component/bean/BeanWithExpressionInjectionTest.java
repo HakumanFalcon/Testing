@@ -52,7 +52,7 @@ public class BeanWithExpressionInjectionTest extends ContextTestSupport {
     protected RouteBuilder createRouteBuilder() {
         return new RouteBuilder() {
             public void configure() {
-                from("direct:in").bean("myBean");
+                from("direct:in").beanRef("myBean");
             }
         };
     }

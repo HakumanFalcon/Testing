@@ -32,7 +32,7 @@ import org.apache.camel.util.ObjectHelper;
 /**
  * Custom load balancer
  */
-@Metadata(label = "eip,routing,loadbalance")
+@Metadata(label = "configuration,loadbalance")
 @XmlRootElement(name = "customLoadBalancer")
 @XmlAccessorType(XmlAccessType.FIELD)
 public class CustomLoadBalancerDefinition extends LoadBalancerDefinition {

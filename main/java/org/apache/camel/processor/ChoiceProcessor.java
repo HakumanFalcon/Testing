@@ -26,7 +26,6 @@ import org.apache.camel.Exchange;
 import org.apache.camel.Navigate;
 import org.apache.camel.Processor;
 import org.apache.camel.Traceable;
-import org.apache.camel.spi.IdAware;
 import org.apache.camel.support.ServiceSupport;
 import org.apache.camel.util.AsyncProcessorConverterHelper;
 import org.apache.camel.util.AsyncProcessorHelper;
@@ -43,14 +42,12 @@ import static org.apache.camel.processor.PipelineHelper.continueProcessing;
  * 
  * @version 
  */
-public class ChoiceProcessor extends ServiceSupport implements AsyncProcessor, Navigate<Processor>, Traceable, IdAware {
+public class ChoiceProcessor extends ServiceSupport implements AsyncProcessor, Navigate<Processor>, Traceable {
     private static final Logger LOG = LoggerFactory.getLogger(ChoiceProcessor.class);
-    private String id;
-    private final List<FilterProcessor> filters;
+    private final List<Processor> filters;
     private final Processor otherwise;
-    private transient long notFiltered;
 
-    public ChoiceProcessor(List<FilterProcessor> filters, Processor otherwise) {
+    public ChoiceProcessor(List<Processor> filters, Processor otherwise) {
         this.filters = filters;
         this.otherwise = otherwise;
     }
@@ -86,20 +83,17 @@ public class ChoiceProcessor extends ServiceSupport implements AsyncProcessor, N
             // evaluate the predicate on filter predicate early to be faster
             // and avoid issues when having nested choices
             // as we should only pick one processor
-            boolean matches = false;
+            boolean matches = true;
             if (processor instanceof FilterProcessor) {
                 FilterProcessor filter = (FilterProcessor) processor;
                 try {
-                    matches = filter.matches(exchange);
+                    matches = filter.getPredicate().matches(exchange);
+                    exchange.setProperty(Exchange.FILTER_MATCHED, matches);
                     // as we have pre evaluated the predicate then use its processor directly when routing
                     processor = filter.getProcessor();
                 } catch (Throwable e) {
                     exchange.setException(e);
                 }
-            } else {
-                // its the otherwise processor, so its a match
-                notFiltered++;
-                matches = true;
             }
 
             // check for error if so we should break out
@@ -147,29 +141,12 @@ public class ChoiceProcessor extends ServiceSupport implements AsyncProcessor, N
         return "choice";
     }
 
-    public List<FilterProcessor> getFilters() {
+    public List<Processor> getFilters() {
         return filters;
     }
 
     public Processor getOtherwise() {
         return otherwise;
-    }
-
-    /**
-     * Gets the number of Exchanges that did not match any predicate and are routed using otherwise
-     */
-    public long getNotFilteredCount() {
-        return notFiltered;
-    }
-
-    /**
-     * Reset counters.
-     */
-    public void reset() {
-        for (FilterProcessor filter : getFilters()) {
-            filter.reset();
-        }
-        notFiltered = 0;
     }
 
     public List<Processor> next() {
@@ -190,14 +167,6 @@ public class ChoiceProcessor extends ServiceSupport implements AsyncProcessor, N
         return otherwise != null || (filters != null && !filters.isEmpty());
     }
 
-    public String getId() {
-        return id;
-    }
-
-    public void setId(String id) {
-        this.id = id;
-    }
-
     protected void doStart() throws Exception {
         ServiceHelper.startServices(filters, otherwise);
     }
@@ -205,5 +174,4 @@ public class ChoiceProcessor extends ServiceSupport implements AsyncProcessor, N
     protected void doStop() throws Exception {
         ServiceHelper.stopServices(otherwise, filters);
     }
-
 }

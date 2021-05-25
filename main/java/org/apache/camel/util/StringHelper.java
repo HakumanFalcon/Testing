@@ -178,11 +178,11 @@ public final class StringHelper {
         }
 
         // for the simple language the expression start token could be "${"
-        if ("simple".equalsIgnoreCase(language) && expression.contains("${")) {
+        if ("simple".equalsIgnoreCase(language) && expression.indexOf("${") >= 0) {
             return true;
         }
 
-        if (language != null && expression.contains("$" + language + "{")) {
+        if (language != null && expression.indexOf("$" + language + "{") >= 0) {
             return true;
         }
 

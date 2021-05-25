@@ -16,6 +16,7 @@
  */
 package org.apache.camel.impl;
 
+
 /**
  * @deprecated
  * @see org.apache.camel.main.MainSupport

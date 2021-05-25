@@ -17,5 +17,6 @@
 package org.apache.camel.component.bean.issues;
 
 public interface SingleMethodService<S, T> {
+
     T doSomething(S foo);
 }

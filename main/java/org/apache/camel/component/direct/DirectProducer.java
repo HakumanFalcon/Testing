@@ -19,8 +19,6 @@ package org.apache.camel.component.direct;
 import org.apache.camel.AsyncCallback;
 import org.apache.camel.Exchange;
 import org.apache.camel.impl.DefaultAsyncProducer;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * The direct producer.
@@ -28,7 +26,6 @@ import org.slf4j.LoggerFactory;
  * @version 
  */
 public class DirectProducer extends DefaultAsyncProducer {
-    private static final transient Logger LOG = LoggerFactory.getLogger(DirectProducer.class);
     private final DirectEndpoint endpoint;
 
     public DirectProducer(DirectEndpoint endpoint) {
@@ -38,11 +35,7 @@ public class DirectProducer extends DefaultAsyncProducer {
 
     public void process(Exchange exchange) throws Exception {
         if (endpoint.getConsumer() == null) {
-            if (endpoint.isFailIfNoConsumers()) {
-                throw new DirectConsumerNotAvailableException("No consumers available on endpoint: " + endpoint, exchange);
-            } else {
-                LOG.debug("message ignored, no consumers available on endpoint: {}", endpoint);
-            }
+            throw new DirectConsumerNotAvailableException("No consumers available on endpoint: " + endpoint, exchange);
         } else {
             endpoint.getConsumer().getProcessor().process(exchange);
         }
@@ -50,12 +43,8 @@ public class DirectProducer extends DefaultAsyncProducer {
 
     public boolean process(Exchange exchange, AsyncCallback callback) {
         if (endpoint.getConsumer() == null) {
-            if (endpoint.isFailIfNoConsumers()) {
-                // indicate its done synchronously
-                exchange.setException(new DirectConsumerNotAvailableException("No consumers available on endpoint: " + endpoint, exchange));
-            } else {
-                LOG.debug("message ignored, no consumers available on endpoint: {}", endpoint);
-            }
+            // indicate its done synchronously
+            exchange.setException(new DirectConsumerNotAvailableException("No consumers available on endpoint: " + endpoint, exchange));
             callback.done(true);
             return true;
         } else {

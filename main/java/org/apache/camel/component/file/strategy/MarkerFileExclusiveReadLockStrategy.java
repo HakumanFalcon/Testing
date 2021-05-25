@@ -38,24 +38,20 @@ public class MarkerFileExclusiveReadLockStrategy implements GenericFileExclusive
     private static final Logger LOG = LoggerFactory.getLogger(MarkerFileExclusiveReadLockStrategy.class);
 
     private boolean markerFile = true;
-    private boolean deleteOrphanLockFiles = true;
 
     @Override
     public void prepareOnStartup(GenericFileOperations<File> operations, GenericFileEndpoint<File> endpoint) {
-        if (deleteOrphanLockFiles) {
+        String dir = endpoint.getConfiguration().getDirectory();
+        File file = new File(dir);
 
-            String dir = endpoint.getConfiguration().getDirectory();
-            File file = new File(dir);
+        LOG.debug("Prepare on startup by deleting orphaned lock files from: {}", dir);
 
-            LOG.debug("Prepare on startup by deleting orphaned lock files from: {}", dir);
+        StopWatch watch = new StopWatch();
+        deleteLockFiles(file, endpoint.isRecursive());
 
-            StopWatch watch = new StopWatch();
-            deleteLockFiles(file, endpoint.isRecursive());
-
-            // log anything that takes more than a second
-            if (watch.taken() > 1000) {
-                LOG.info("Prepared on startup by deleting orphaned lock files from: {} took {} millis to complete.", dir, watch.taken());
-            }
+        // log anything that takes more than a second
+        if (watch.taken() > 1000) {
+            LOG.info("Prepared on startup by deleting orphaned lock files from: {} took {} millis to complete.", dir, watch.taken());
         }
     }
 
@@ -82,22 +78,8 @@ public class MarkerFileExclusiveReadLockStrategy implements GenericFileExclusive
     }
 
     @Override
-    public void releaseExclusiveReadLockOnAbort(GenericFileOperations<File> operations, GenericFile<File> file, Exchange exchange) throws Exception {
-        doReleaseExclusiveReadLock(operations, file, exchange);
-    }
-
-    @Override
-    public void releaseExclusiveReadLockOnRollback(GenericFileOperations<File> operations, GenericFile<File> file, Exchange exchange) throws Exception {
-        doReleaseExclusiveReadLock(operations, file, exchange);
-    }
-
-    @Override
-    public void releaseExclusiveReadLockOnCommit(GenericFileOperations<File> operations, GenericFile<File> file, Exchange exchange) throws Exception {
-        doReleaseExclusiveReadLock(operations, file, exchange);
-    }
-
-    protected void doReleaseExclusiveReadLock(GenericFileOperations<File> operations,
-                                              GenericFile<File> file, Exchange exchange) throws Exception {
+    public void releaseExclusiveReadLock(GenericFileOperations<File> operations,
+                                         GenericFile<File> file, Exchange exchange) throws Exception {
         if (!markerFile) {
             // if not using marker file then nothing to release
             return;
@@ -136,11 +118,6 @@ public class MarkerFileExclusiveReadLockStrategy implements GenericFileExclusive
     @Override
     public void setMarkerFiler(boolean markerFile) {
         this.markerFile = markerFile;
-    }
-
-    @Override
-    public void setDeleteOrphanLockFiles(boolean deleteOrphanLockFiles) {
-        this.deleteOrphanLockFiles = deleteOrphanLockFiles;
     }
 
     private static void deleteLockFiles(File dir, boolean recursive) {

@@ -41,7 +41,7 @@ import org.apache.camel.util.ObjectHelper;
  * timeout is reached. After this timeout is reached, if there is a new call, it will pass and if the result is
  * success the Circuit Breaker will move to closed state, or to open state if there was an error.
  */
-@Metadata(label = "eip,routing,loadbalance")
+@Metadata(label = "configuration,loadbalance")
 @XmlRootElement(name = "circuitBreaker")
 @XmlAccessorType(XmlAccessType.FIELD)
 public class CircuitBreakerLoadBalancerDefinition extends LoadBalancerDefinition {
@@ -55,12 +55,6 @@ public class CircuitBreakerLoadBalancerDefinition extends LoadBalancerDefinition
     private Integer threshold;
 
     public CircuitBreakerLoadBalancerDefinition() {
-    }
-
-    @Override
-    protected int getMaximumNumberOfOutputs() {
-        // we can only support 1 output
-        return 1;
     }
 
     @Override

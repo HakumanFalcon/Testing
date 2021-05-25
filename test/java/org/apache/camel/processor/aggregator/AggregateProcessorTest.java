@@ -354,7 +354,7 @@ public class AggregateProcessorTest extends ContextTestSupport {
         ap.process(e2);
         Exception e = e2.getException();
         assertNotNull(e);
-        assertTrue(e.getMessage().startsWith("Invalid correlation key."));
+        assertEquals("Invalid correlation key. Exchange[Message: B]", e.getMessage());
 
         ap.process(e3);
         ap.process(e4);
@@ -402,7 +402,7 @@ public class AggregateProcessorTest extends ContextTestSupport {
         ap.process(e4);
         Exception e = e4.getException();
         assertNotNull(e);
-        assertTrue(e.getMessage().startsWith("The correlation key [123] has been closed."));
+        assertEquals("The correlation key [123] has been closed. Exchange[Message: C]", e.getMessage());
 
         assertMockEndpointsSatisfied();
 
@@ -560,7 +560,7 @@ public class AggregateProcessorTest extends ContextTestSupport {
 
         MockEndpoint mock = getMockEndpoint("mock:result");
         mock.expectedBodiesReceivedInAnyOrder("B+END", "A+END");
-        mock.expectedPropertyReceived(Exchange.AGGREGATED_COMPLETED_BY, "force");
+        mock.expectedPropertyReceived(Exchange.AGGREGATED_COMPLETED_BY, "forceCompletion");
 
         Processor done = new SendProcessor(context.getEndpoint("mock:result"));
         Expression corr = header("id");

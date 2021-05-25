@@ -19,7 +19,7 @@
 
     <xsl:include href="staff_template.xsl"/>
 
-    <xsl:template match="staff/programmer" priority="2">
+    <xsl:template match="staff/programmer">
         <html>
             <body>
                 <xsl:apply-templates select="name"/>

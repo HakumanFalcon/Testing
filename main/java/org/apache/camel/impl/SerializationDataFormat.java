@@ -24,7 +24,6 @@ import java.io.OutputStream;
 
 import org.apache.camel.Exchange;
 import org.apache.camel.spi.DataFormat;
-import org.apache.camel.spi.DataFormatName;
 import org.apache.camel.util.ExchangeHelper;
 
 /**
@@ -33,12 +32,7 @@ import org.apache.camel.util.ExchangeHelper;
  *
  * @version 
  */
-public class SerializationDataFormat extends org.apache.camel.support.ServiceSupport implements DataFormat, DataFormatName {
-
-    @Override
-    public String getDataFormatName() {
-        return "serialization";
-    }
+public class SerializationDataFormat implements DataFormat {
 
     public void marshal(Exchange exchange, Object graph, OutputStream stream) throws Exception {
         ObjectOutput out = ExchangeHelper.convertToMandatoryType(exchange, ObjectOutput.class, stream);
@@ -65,15 +59,5 @@ public class SerializationDataFormat extends org.apache.camel.support.ServiceSup
                 // ignore
             }
         }
-    }
-
-    @Override
-    protected void doStart() throws Exception {
-        // noop
-    }
-
-    @Override
-    protected void doStop() throws Exception {
-        // noop
     }
 }

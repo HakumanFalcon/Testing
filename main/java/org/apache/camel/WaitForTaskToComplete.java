@@ -29,7 +29,7 @@ import javax.xml.bind.annotation.XmlType;
  * @version 
  */
 @XmlType
-@XmlEnum
+@XmlEnum(String.class)
 public enum WaitForTaskToComplete {
 
     Never, IfReplyExpected, Always

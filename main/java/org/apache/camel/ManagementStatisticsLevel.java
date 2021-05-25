@@ -26,14 +26,6 @@ import javax.xml.bind.annotation.XmlEnum;
 @XmlEnum
 public enum ManagementStatisticsLevel {
 
-    Extended, Default, RoutesOnly, Off;
-
-    public boolean isDefaultOrExtended() {
-        return ordinal() == Default.ordinal() || ordinal() == Extended.ordinal();
-    }
-
-    public boolean isExtended() {
-        return ordinal() == Extended.ordinal();
-    }
+    All, RoutesOnly, Off
 
 }

@@ -16,13 +16,10 @@
  */
 package org.apache.camel.model;
 
-import java.util.Map;
 import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;
-import javax.xml.bind.annotation.XmlAnyAttribute;
 import javax.xml.bind.annotation.XmlTransient;
 import javax.xml.bind.annotation.XmlType;
-import javax.xml.namespace.QName;
 
 import org.apache.camel.CamelContext;
 import org.apache.camel.spi.DataFormat;
@@ -39,14 +36,11 @@ import static org.apache.camel.util.EndpointHelper.isReferenceParameter;
 @Metadata(label = "dataformat,transformation")
 @XmlType(name = "dataFormat")
 @XmlAccessorType(XmlAccessType.FIELD)
-public class DataFormatDefinition extends IdentifiedType implements OtherAttributesAware {
+public class DataFormatDefinition extends IdentifiedType {
     @XmlTransient
     private DataFormat dataFormat;
     @XmlTransient
     private String dataFormatName;
-    // use xs:any to support optional property placeholders
-    @XmlAnyAttribute
-    private Map<QName, Object> otherAttributes;
 
     public DataFormatDefinition() {
     }
@@ -72,7 +66,7 @@ public class DataFormatDefinition extends IdentifiedType implements OtherAttribu
             ObjectHelper.notNull(ref, "ref or type");
 
             // try to let resolver see if it can resolve it, its not always possible
-            type = routeContext.getCamelContext().resolveDataFormatDefinition(ref);
+            type = ((ModelCamelContext) routeContext.getCamelContext()).resolveDataFormatDefinition(ref);
 
             if (type != null) {
                 return type.getDataFormat(routeContext);
@@ -91,7 +85,6 @@ public class DataFormatDefinition extends IdentifiedType implements OtherAttribu
 
     public DataFormat getDataFormat(RouteContext routeContext) {
         if (dataFormat == null) {
-            Runnable propertyPlaceholdersChangeReverter = ProcessorDefinitionHelper.createPropertyPlaceholdersChangeReverter();
 
             // resolve properties before we create the data format
             try {
@@ -99,17 +92,14 @@ public class DataFormatDefinition extends IdentifiedType implements OtherAttribu
             } catch (Exception e) {
                 throw new IllegalArgumentException("Error resolving property placeholders on data format: " + this, e);
             }
-            try {
-                dataFormat = createDataFormat(routeContext);
-                if (dataFormat != null) {
-                    configureDataFormat(dataFormat, routeContext.getCamelContext());
-                } else {
-                    throw new IllegalArgumentException(
-                            "Data format '" + (dataFormatName != null ? dataFormatName : "<null>") + "' could not be created. "
-                                    + "Ensure that the data format is valid and the associated Camel component is present on the classpath");
-                }
-            } finally {
-                propertyPlaceholdersChangeReverter.run();
+
+            dataFormat = createDataFormat(routeContext);
+            if (dataFormat != null) {
+                configureDataFormat(dataFormat, routeContext.getCamelContext());
+            } else {
+                throw new IllegalArgumentException(
+                        "Data format '" + (dataFormatName != null ? dataFormatName : "<null>") + "' could not be created. "
+                                + "Ensure that the data format is valid and the associated Camel component is present on the classpath");
             }
         }
         return dataFormat;
@@ -181,17 +171,6 @@ public class DataFormatDefinition extends IdentifiedType implements OtherAttribu
 
     public void setDataFormat(DataFormat dataFormat) {
         this.dataFormat = dataFormat;
-    }
-
-    public Map<QName, Object> getOtherAttributes() {
-        return otherAttributes;
-    }
-
-    /**
-     * Adds an optional attribute
-     */
-    public void setOtherAttributes(Map<QName, Object> otherAttributes) {
-        this.otherAttributes = otherAttributes;
     }
 
     public String getShortName() {

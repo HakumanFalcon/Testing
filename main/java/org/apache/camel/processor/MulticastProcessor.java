@@ -50,7 +50,6 @@ import org.apache.camel.Traceable;
 import org.apache.camel.processor.aggregate.AggregationStrategy;
 import org.apache.camel.processor.aggregate.CompletionAwareAggregationStrategy;
 import org.apache.camel.processor.aggregate.TimeoutAwareAggregationStrategy;
-import org.apache.camel.spi.IdAware;
 import org.apache.camel.spi.RouteContext;
 import org.apache.camel.spi.TracedRouteNodes;
 import org.apache.camel.spi.UnitOfWork;
@@ -81,7 +80,7 @@ import static org.apache.camel.util.ObjectHelper.notNull;
  * @version 
  * @see Pipeline
  */
-public class MulticastProcessor extends ServiceSupport implements AsyncProcessor, Navigate<Processor>, Traceable, IdAware {
+public class MulticastProcessor extends ServiceSupport implements AsyncProcessor, Navigate<Processor>, Traceable {
 
     private static final Logger LOG = LoggerFactory.getLogger(MulticastProcessor.class);
 
@@ -145,7 +144,6 @@ public class MulticastProcessor extends ServiceSupport implements AsyncProcessor
 
     protected final Processor onPrepare;
     private final CamelContext camelContext;
-    private String id;
     private Collection<Processor> processors;
     private final AggregationStrategy aggregationStrategy;
     private final boolean parallelProcessing;
@@ -198,14 +196,6 @@ public class MulticastProcessor extends ServiceSupport implements AsyncProcessor
     @Override
     public String toString() {
         return "Multicast[" + getProcessors() + "]";
-    }
-
-    public String getId() {
-        return id;
-    }
-
-    public void setId(String id) {
-        this.id = id;
     }
 
     public String getTraceLabel() {
@@ -293,11 +283,6 @@ public class MulticastProcessor extends ServiceSupport implements AsyncProcessor
 
             while (it.hasNext()) {
                 final ProcessorExchangePair pair = it.next();
-                // in case the iterator returns null then continue to next
-                if (pair == null) {
-                    continue;
-                }
-
                 final Exchange subExchange = pair.getExchange();
                 updateNewExchange(subExchange, total.intValue(), pairs, it);
 
@@ -523,18 +508,12 @@ public class MulticastProcessor extends ServiceSupport implements AsyncProcessor
 
         @Override
         public void run() {
-            try {
-                if (parallelAggregate) {
-                    doAggregateInternal(getAggregationStrategy(subExchange), result, subExchange);
-                } else {
-                    doAggregate(getAggregationStrategy(subExchange), result, subExchange);
-                }
-            } catch (Throwable e) {
-                // wrap in exception to explain where it failed
-                subExchange.setException(new CamelExchangeException("Parallel processing failed for number " + aggregated.get(), subExchange, e));
-            } finally {
-                aggregated.incrementAndGet();
+            if (parallelAggregate) {
+                doAggregateInternal(getAggregationStrategy(subExchange), result, subExchange);
+            } else {
+                doAggregate(getAggregationStrategy(subExchange), result, subExchange);
             }
+            aggregated.incrementAndGet();
         }
     }
 
@@ -595,10 +574,6 @@ public class MulticastProcessor extends ServiceSupport implements AsyncProcessor
 
         while (it.hasNext()) {
             ProcessorExchangePair pair = it.next();
-            // in case the iterator returns null then continue to next
-            if (pair == null) {
-                continue;
-            }
             Exchange subExchange = pair.getExchange();
             updateNewExchange(subExchange, total.get(), pairs, it);
 
@@ -883,7 +858,7 @@ public class MulticastProcessor extends ServiceSupport implements AsyncProcessor
         // must copy results at this point
         if (subExchange != null) {
             if (stoppedOnException) {
-                // if we stopped due an exception then only propagate the exception
+                // if we stopped due an exception then only propagte the exception
                 original.setException(subExchange.getException());
             } else {
                 // copy the current result to original so it will contain this result of this eip
@@ -968,7 +943,7 @@ public class MulticastProcessor extends ServiceSupport implements AsyncProcessor
                 if (index > 0) {
                     // copy it otherwise parallel processing is not possible,
                     // because streams can only be read once
-                    StreamCache copiedStreamCache = streamCache.copy(copy);
+                    StreamCache copiedStreamCache = streamCache.copy();
                     if (copiedStreamCache != null) {
                         copy.getIn().setBody(copiedStreamCache);  
                     }
@@ -1099,16 +1074,21 @@ public class MulticastProcessor extends ServiceSupport implements AsyncProcessor
      * @return the unit of work processor
      */
     protected Processor createUnitOfWorkProcessor(RouteContext routeContext, Processor processor, Exchange exchange) {
+        String routeId = routeContext != null ? routeContext.getRoute().idOrCreate(routeContext.getCamelContext().getNodeIdFactory()) : null;
         CamelInternalProcessor internal = new CamelInternalProcessor(processor);
 
         // and wrap it in a unit of work so the UoW is on the top, so the entire route will be in the same UoW
         UnitOfWork parent = exchange.getProperty(Exchange.PARENT_UNIT_OF_WORK, UnitOfWork.class);
         if (parent != null) {
-            internal.addAdvice(new CamelInternalProcessor.ChildUnitOfWorkProcessorAdvice(routeContext, parent));
+            internal.addAdvice(new CamelInternalProcessor.ChildUnitOfWorkProcessorAdvice(routeId, parent));
         } else {
-            internal.addAdvice(new CamelInternalProcessor.UnitOfWorkProcessorAdvice(routeContext));
+            internal.addAdvice(new CamelInternalProcessor.UnitOfWorkProcessorAdvice(routeId));
         }
 
+        // and then in route context so we can keep track which route this is at runtime
+        if (routeContext != null) {
+            internal.addAdvice(new CamelInternalProcessor.RouteContextAdvice(routeContext));
+        }
         return internal;
     }
 
@@ -1280,10 +1260,6 @@ public class MulticastProcessor extends ServiceSupport implements AsyncProcessor
 
     public boolean isParallelProcessing() {
         return parallelProcessing;
-    }
-
-    public boolean isParallelAggregate() {
-        return parallelAggregate;
     }
 
     public boolean isShareUnitOfWork() {

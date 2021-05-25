@@ -26,6 +26,7 @@ import org.apache.camel.Processor;
 import org.apache.camel.builder.ProcessorBuilder;
 import org.apache.camel.model.language.ExpressionDefinition;
 import org.apache.camel.spi.Metadata;
+import org.apache.camel.spi.Required;
 import org.apache.camel.spi.RouteContext;
 import org.apache.camel.util.ObjectHelper;
 
@@ -39,6 +40,7 @@ import org.apache.camel.util.ObjectHelper;
 @XmlAccessorType(XmlAccessType.FIELD)
 @Deprecated
 public class SetOutHeaderDefinition extends NoOutputExpressionNode {
+    @Deprecated
     @XmlAttribute(required = true)
     private String headerName;
     
@@ -84,6 +86,7 @@ public class SetOutHeaderDefinition extends NoOutputExpressionNode {
     /**
      * Name of message header to set a new value
      */
+    @Required
     public void setHeaderName(String headerName) {
         this.headerName = headerName;
     }

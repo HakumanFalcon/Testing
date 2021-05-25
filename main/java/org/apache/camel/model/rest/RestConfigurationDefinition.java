@@ -42,9 +42,6 @@ public class RestConfigurationDefinition {
     @XmlAttribute
     private String component;
 
-    @XmlAttribute @Metadata(defaultValue = "swagger")
-    private String apiComponent;
-
     @XmlAttribute
     private String scheme;
 
@@ -56,18 +53,6 @@ public class RestConfigurationDefinition {
 
     @XmlAttribute
     private String contextPath;
-
-    @XmlAttribute
-    private String apiContextPath;
-
-    @XmlAttribute
-    private String apiContextRouteId;
-
-    @XmlAttribute
-    private String apiContextIdPattern;
-
-    @XmlAttribute
-    private Boolean apiContextListing;
 
     @XmlAttribute
     private RestHostNameResolver hostNameResolver;
@@ -99,9 +84,6 @@ public class RestConfigurationDefinition {
     @XmlElement(name = "dataFormatProperty")
     private List<RestPropertyDefinition> dataFormatProperties = new ArrayList<RestPropertyDefinition>();
 
-    @XmlElement(name = "apiProperty")
-    private List<RestPropertyDefinition> apiProperties = new ArrayList<RestPropertyDefinition>();
-
     @XmlElement(name = "corsHeaders")
     private List<RestPropertyDefinition> corsHeaders = new ArrayList<RestPropertyDefinition>();
 
@@ -117,17 +99,6 @@ public class RestConfigurationDefinition {
      */
     public void setComponent(String component) {
         this.component = component;
-    }
-
-    public String getApiComponent() {
-        return apiComponent;
-    }
-
-    /**
-     * The name of the Camel component to use as the REST API (such as swagger)
-     */
-    public void setApiComponent(String apiComponent) {
-        this.apiComponent = apiComponent;
     }
 
     public String getScheme() {
@@ -177,72 +148,10 @@ public class RestConfigurationDefinition {
 
     /**
      * Sets a leading context-path the REST services will be using.
-     * <p/>
-     * This can be used when using components such as <tt>camel-servlet</tt> where the deployed web application
-     * is deployed using a context-path. Or for components such as <tt>camel-jetty</tt> or <tt>camel-netty4-http</tt>
-     * that includes a HTTP server.
+     * This can be used when using components such as SERVLET where the deployed web application is deployed using a context-path.
      */
     public void setContextPath(String contextPath) {
         this.contextPath = contextPath;
-    }
-
-    public String getApiContextPath() {
-        return apiContextPath;
-    }
-
-    /**
-     * Sets a leading API context-path the REST API services will be using.
-     * <p/>
-     * This can be used when using components such as <tt>camel-servlet</tt> where the deployed web application
-     * is deployed using a context-path.
-     *
-     * @param contextPath the API context path
-     */
-    public void setApiContextPath(String contextPath) {
-        this.apiContextPath = contextPath;
-    }
-
-    public String getApiContextRouteId() {
-        return apiContextRouteId;
-    }
-
-    /**
-     * Sets the route id to use for the route that services the REST API.
-     * <p/>
-     * The route will by default use an auto assigned route id.
-     *
-     * @param apiContextRouteId  the route id
-     */
-    public void setApiContextRouteId(String apiContextRouteId) {
-        this.apiContextRouteId = apiContextRouteId;
-    }
-
-    public String getApiContextIdPattern() {
-        return apiContextIdPattern;
-    }
-
-    /**
-     * Sets an CamelContext id pattern to only allow Rest APIs from rest services within CamelContext's which name matches the pattern.
-     * <p/>
-     * The pattern <tt>#name#</tt> refers to the CamelContext name, to match on the current CamelContext only.
-     * For any other value, the pattern uses the rules from {@link org.apache.camel.util.EndpointHelper#matchPattern(String, String)}
-     *
-     * @param apiContextIdPattern  the pattern
-     */
-    public void setApiContextIdPattern(String apiContextIdPattern) {
-        this.apiContextIdPattern = apiContextIdPattern;
-    }
-
-    public Boolean getApiContextListing() {
-        return apiContextListing;
-    }
-
-    /**
-     * Sets whether listing of all available CamelContext's with REST services in the JVM is enabled. If enabled it allows to discover
-     * these contexts, if <tt>false</tt> then only the current CamelContext is in use.
-     */
-    public void setApiContextListing(Boolean apiContextListing) {
-        this.apiContextListing = apiContextListing;
     }
 
     public RestHostNameResolver getHostNameResolver() {
@@ -375,18 +284,6 @@ public class RestConfigurationDefinition {
         this.dataFormatProperties = dataFormatProperties;
     }
 
-    public List<RestPropertyDefinition> getApiProperties() {
-        return apiProperties;
-    }
-
-    /**
-     * Allows to configure as many additional properties for the api documentation (swagger).
-     * For example set property api.title to my cool stuff
-     */
-    public void setApiProperties(List<RestPropertyDefinition> apiProperties) {
-        this.apiProperties = apiProperties;
-    }
-
     public List<RestPropertyDefinition> getCorsHeaders() {
         return corsHeaders;
     }
@@ -406,14 +303,6 @@ public class RestConfigurationDefinition {
      */
     public RestConfigurationDefinition component(String componentId) {
         setComponent(componentId);
-        return this;
-    }
-
-    /**
-     * To use a specific Camel rest API component
-     */
-    public RestConfigurationDefinition apiComponent(String componentId) {
-        setApiComponent(componentId);
         return this;
     }
 
@@ -446,45 +335,6 @@ public class RestConfigurationDefinition {
      */
     public RestConfigurationDefinition port(String port) {
         setPort(port);
-        return this;
-    }
-
-    /**
-     * Sets a leading context-path the REST services will be using.
-     * <p/>
-     * This can be used when using components such as <tt>camel-servlet</tt> where the deployed web application
-     * is deployed using a context-path. Or for components such as <tt>camel-jetty</tt> or <tt>camel-netty4-http</tt>
-     * that includes a HTTP server.
-     */
-    public RestConfigurationDefinition apiContextPath(String contextPath) {
-        setApiContextPath(contextPath);
-        return this;
-    }
-
-    /**
-     * Sets the route id to use for the route that services the REST API.
-     */
-    public RestConfigurationDefinition apiContextRouteId(String routeId) {
-        setApiContextRouteId(routeId);
-        return this;
-    }
-
-    /**
-     * Sets an CamelContext id pattern to only allow Rest APIs from rest services within CamelContext's which name matches the pattern.
-     * <p/>
-     * The pattern uses the rules from {@link org.apache.camel.util.EndpointHelper#matchPattern(String, String)}
-     */
-    public RestConfigurationDefinition apiContextIdPattern(String pattern) {
-        setApiContextIdPattern(pattern);
-        return this;
-    }
-
-    /**
-     * Sets whether listing of all available CamelContext's with REST services in the JVM is enabled. If enabled it allows to discover
-     * these contexts, if <tt>false</tt> then only the current CamelContext is in use.
-     */
-    public RestConfigurationDefinition apiContextListing(boolean listing) {
-        setApiContextListing(listing);
         return this;
     }
 
@@ -600,17 +450,6 @@ public class RestConfigurationDefinition {
     }
 
     /**
-     * For configuring an api property, such as <tt>api.title</tt>, or <tt>api.version</tt>.
-     */
-    public RestConfigurationDefinition apiProperty(String key, String value) {
-        RestPropertyDefinition prop = new RestPropertyDefinition();
-        prop.setKey(key);
-        prop.setValue(value);
-        getApiProperties().add(prop);
-        return this;
-    }
-
-    /**
      * For configuring CORS headers
      */
     public RestConfigurationDefinition corsHeaderProperty(String key, String value) {
@@ -636,9 +475,6 @@ public class RestConfigurationDefinition {
         if (component != null) {
             answer.setComponent(CamelContextHelper.parseText(context, component));
         }
-        if (apiComponent != null) {
-            answer.setApiComponent(CamelContextHelper.parseText(context, apiComponent));
-        }
         if (scheme != null) {
             answer.setScheme(CamelContextHelper.parseText(context, scheme));
         }
@@ -647,23 +483,6 @@ public class RestConfigurationDefinition {
         }
         if (port != null) {
             answer.setPort(CamelContextHelper.parseInteger(context, port));
-        }
-        if (apiContextPath != null) {
-            answer.setApiContextPath(CamelContextHelper.parseText(context, apiContextPath));
-        }
-        if (apiContextRouteId != null) {
-            answer.setApiContextRouteId(CamelContextHelper.parseText(context, apiContextRouteId));
-        }
-        if (apiContextIdPattern != null) {
-            // special to allow #name# to refer to itself
-            if ("#name#".equals(apiComponent)) {
-                answer.setApiContextIdPattern(context.getName());
-            } else {
-                answer.setApiContextIdPattern(CamelContextHelper.parseText(context, apiContextIdPattern));
-            }
-        }
-        if (apiContextListing != null) {
-            answer.setApiContextListing(apiContextListing);
         }
         if (contextPath != null) {
             answer.setContextPath(CamelContextHelper.parseText(context, contextPath));
@@ -721,15 +540,6 @@ public class RestConfigurationDefinition {
                 props.put(key, value);
             }
             answer.setDataFormatProperties(props);
-        }
-        if (!apiProperties.isEmpty()) {
-            Map<String, Object> props = new HashMap<String, Object>();
-            for (RestPropertyDefinition prop : apiProperties) {
-                String key = prop.getKey();
-                String value = CamelContextHelper.parseText(context, prop.getValue());
-                props.put(key, value);
-            }
-            answer.setApiProperties(props);
         }
         if (!corsHeaders.isEmpty()) {
             Map<String, String> props = new HashMap<String, String>();

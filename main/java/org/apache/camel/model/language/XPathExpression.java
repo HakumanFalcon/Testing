@@ -33,7 +33,7 @@ import org.apache.camel.util.ObjectHelper;
 /**
  * For XPath expressions and predicates
  */
-@Metadata(label = "language,core,xml", title = "XPath")
+@Metadata(label = "language", title = "XPath")
 @XmlRootElement(name = "xpath")
 @XmlAccessorType(XmlAccessType.FIELD)
 public class XPathExpression extends NamespaceAwareExpression {
@@ -241,6 +241,7 @@ public class XPathExpression extends NamespaceAwareExpression {
         }
         // moved the super configuration to the bottom so that the namespace init picks up the newly set XPath Factory
         super.configureExpression(camelContext, expression);
+
     }
 
     @Override

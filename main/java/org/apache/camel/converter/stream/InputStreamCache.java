@@ -20,7 +20,6 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 
-import org.apache.camel.Exchange;
 import org.apache.camel.StreamCache;
 
 /**
@@ -41,7 +40,7 @@ public final class InputStreamCache extends ByteArrayInputStream implements Stre
         os.write(buf, pos, count - pos);
     }
 
-    public StreamCache copy(Exchange exchange) {
+    public StreamCache copy() {
         return new InputStreamCache(buf, count);
     }
 

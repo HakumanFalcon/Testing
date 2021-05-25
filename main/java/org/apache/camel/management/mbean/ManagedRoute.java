@@ -16,8 +16,6 @@
  */
 package org.apache.camel.management.mbean;
 
-import java.io.ByteArrayInputStream;
-import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -28,15 +26,13 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
 import javax.management.AttributeValueExp;
 import javax.management.MBeanServer;
+import javax.management.MBeanServerInvocationHandler;
 import javax.management.ObjectName;
 import javax.management.Query;
 import javax.management.QueryExp;
 import javax.management.StringValueExp;
-
-import org.w3c.dom.Document;
 
 import org.apache.camel.CamelContext;
 import org.apache.camel.Exchange;
@@ -53,17 +49,10 @@ import org.apache.camel.model.RouteDefinition;
 import org.apache.camel.spi.ManagementStrategy;
 import org.apache.camel.spi.RoutePolicy;
 import org.apache.camel.util.ObjectHelper;
-import org.apache.camel.util.XmlLineNumberParser;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 @ManagedResource(description = "Managed Route")
 public class ManagedRoute extends ManagedPerformanceCounter implements TimerListener, ManagedRouteMBean {
-
     public static final String VALUE_UNKNOWN = "Unknown";
-
-    private static final Logger LOG = LoggerFactory.getLogger(ManagedRoute.class);
-
     protected final Route route;
     protected final String description;
     protected final ModelCamelContext context;
@@ -75,16 +64,8 @@ public class ManagedRoute extends ManagedPerformanceCounter implements TimerList
         this.route = route;
         this.context = context;
         this.description = route.getDescription();
-    }
-
-    @Override
-    public void init(ManagementStrategy strategy) {
-        super.init(strategy);
-        boolean enabled = context.getManagementStrategy().getManagementAgent().getStatisticsLevel() != ManagementStatisticsLevel.Off;
+        boolean enabled = context.getManagementStrategy().getStatisticsLevel() != ManagementStatisticsLevel.Off;
         setStatisticsEnabled(enabled);
-
-        exchangesInFlightKeys.clear();
-        exchangesInFlightStartTimestamps.clear();
     }
 
     public Route getRoute() {
@@ -123,10 +104,6 @@ public class ManagedRoute extends ManagedPerformanceCounter implements TimerList
             status = ServiceStatus.Stopped;
         }
         return status.name();
-    }
-
-    public String getUptime() {
-        return route.getUptime();
     }
 
     public Integer getInflightExchanges() {
@@ -262,43 +239,10 @@ public class ManagedRoute extends ManagedPerformanceCounter implements TimerList
     }
 
     public String dumpRouteAsXml() throws Exception {
-        return dumpRouteAsXml(false);
-    }
-
-    @Override
-    public String dumpRouteAsXml(boolean resolvePlaceholders) throws Exception {
         String id = route.getId();
         RouteDefinition def = context.getRouteDefinition(id);
         if (def != null) {
-            String xml = ModelHelper.dumpModelAsXml(context, def);
-
-            // if resolving placeholders we parse the xml, and resolve the property placeholders during parsing
-            if (resolvePlaceholders) {
-                final AtomicBoolean changed = new AtomicBoolean();
-                InputStream is = new ByteArrayInputStream(xml.getBytes());
-                Document dom = XmlLineNumberParser.parseXml(is, new XmlLineNumberParser.XmlTextTransformer() {
-                    @Override
-                    public String transform(String text) {
-                        try {
-                            String after = getContext().resolvePropertyPlaceholders(text);
-                            if (!changed.get()) {
-                                changed.set(!text.equals(after));
-                            }
-                            return after;
-                        } catch (Exception e) {
-                            // ignore
-                            return text;
-                        }
-                    }
-                });
-                // okay there were some property placeholder replaced so re-create the model
-                if (changed.get()) {
-                    xml = context.getTypeConverter().mandatoryConvertTo(String.class, dom);
-                    RouteDefinition copy = ModelHelper.createModelFromXml(context, xml, RouteDefinition.class);
-                    xml = ModelHelper.dumpModelAsXml(context, copy);
-                }
-            }
-            return xml;
+            return ModelHelper.dumpModelAsXml(context, def);
         }
         return null;
     }
@@ -320,17 +264,8 @@ public class ManagedRoute extends ManagedPerformanceCounter implements TimerList
                     + getRouteId() + ", routeId from XML: " + def.getId());
         }
 
-        LOG.debug("Updating route: {} from xml: {}", def.getId(), xml);
-
-        try {
-            // add will remove existing route first
-            context.addRouteDefinition(def);
-        } catch (Exception e) {
-            // log the error as warn as the management api may be invoked remotely over JMX which does not propagate such exception
-            String msg = "Error updating route: " + def.getId() + " from xml: " + xml + " due: " + e.getMessage();
-            LOG.warn(msg, e);
-            throw e;
-        }
+        // add will remove existing route first
+        context.addRouteDefinition(def);
     }
 
     public String dumpRouteStatsAsXml(boolean fullStats, boolean includeProcessors) throws Exception {
@@ -353,7 +288,7 @@ public class ManagedRoute extends ManagedPerformanceCounter implements TimerList
                 Set<ObjectName> names = server.queryNames(query, null);
                 List<ManagedProcessorMBean> mps = new ArrayList<ManagedProcessorMBean>();
                 for (ObjectName on : names) {
-                    ManagedProcessorMBean processor = context.getManagementStrategy().getManagementAgent().newProxyClient(on, ManagedProcessorMBean.class);
+                    ManagedProcessorMBean processor = MBeanServerInvocationHandler.newProxyInstance(server, on, ManagedProcessorMBean.class, true);
 
                     // the processor must belong to this route
                     if (getRouteId().equals(processor.getRouteId())) {
@@ -478,6 +413,13 @@ public class ManagedRoute extends ManagedPerformanceCounter implements TimerList
             return null;
         }
         return oldest.exchangeId;
+    }
+
+    @Override
+    public void init(ManagementStrategy strategy) {
+        exchangesInFlightKeys.clear();
+        exchangesInFlightStartTimestamps.clear();
+        super.init(strategy);
     }
 
     @Override

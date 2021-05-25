@@ -27,7 +27,7 @@ import org.apache.camel.spi.Metadata;
  *
  * @version 
  */
-@Metadata(label = "language,core", title = "Header")
+@Metadata(label = "language", title = "Header")
 @XmlRootElement(name = "header")
 @XmlAccessorType(XmlAccessType.FIELD)
 public class HeaderExpression extends ExpressionDefinition {

@@ -27,7 +27,7 @@ import org.apache.camel.spi.Metadata;
  *
  * @version 
  */
-@Metadata(label = "language,xml", title = "VtdXML")
+@Metadata(label = "language", title = "VtdXML")
 @XmlRootElement(name = "vtdxml")
 @XmlAccessorType(XmlAccessType.FIELD)
 public class VtdXmlExpression extends NamespaceAwareExpression {

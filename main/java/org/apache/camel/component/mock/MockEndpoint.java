@@ -85,14 +85,10 @@ import org.slf4j.LoggerFactory;
  * An alternative is to use <a href="http://camel.apache.org/notifybuilder.html">NotifyBuilder</a>, and use the notifier
  * to know when Camel is done routing some messages, before you call the {@link #assertIsSatisfied()} method on the mocks.
  * This allows you to not use a fixed assert period, to speedup testing times.
- * <p/>
- * <b>Important:</b> If using {@link #expectedMessageCount(int)} and also {@link #expectedBodiesReceived(java.util.List)} or
- * {@link #expectedHeaderReceived(String, Object)} then the latter overrides the number of expected message based on the
- * number of values provided in the bodies/headers.
  *
  * @version 
  */
-@UriEndpoint(scheme = "mock", title = "Mock", syntax = "mock:name", producerOnly = true, label = "core,testing", lenientProperties = true)
+@UriEndpoint(scheme = "mock", title = "Mock", syntax = "mock:name", producerOnly = true, label = "core,testing")
 public class MockEndpoint extends DefaultEndpoint implements BrowsableEndpoint {
     private static final Logger LOG = LoggerFactory.getLogger(MockEndpoint.class);
     // must be volatile so changes is visible between the thread which performs the assertions
@@ -117,23 +113,21 @@ public class MockEndpoint extends DefaultEndpoint implements BrowsableEndpoint {
 
     @UriPath(description = "Name of mock endpoint") @Metadata(required = "true")
     private String name;
-    @UriParam(label = "producer", defaultValue = "-1")
+    @UriParam(defaultValue = "-1")
     private int expectedCount;
-    @UriParam(label = "producer", defaultValue = "0")
+    @UriParam(defaultValue = "0")
     private long sleepForEmptyTest;
-    @UriParam(label = "producer", defaultValue = "0")
+    @UriParam(defaultValue = "0")
     private long resultWaitTime;
-    @UriParam(label = "producer", defaultValue = "0")
+    @UriParam(defaultValue = "0")
     private long resultMinimumWaitTime;
-    @UriParam(label = "producer", defaultValue = "0")
+    @UriParam(defaultValue = "0")
     private long assertPeriod;
-    @UriParam(label = "producer", defaultValue = "-1")
+    @UriParam(defaultValue = "-1")
     private int retainFirst;
-    @UriParam(label = "producer", defaultValue = "-1")
+    @UriParam(defaultValue = "-1")
     private int retainLast;
-    @UriParam(label = "producer")
-    private int reportGroup;
-    @UriParam(label = "producer,advanced", defaultValue = "true")
+    @UriParam(defaultValue = "true")
     private boolean copyOnExchange = true;
 
     public MockEndpoint(String endpointUri, Component component) {
@@ -513,11 +507,6 @@ public class MockEndpoint extends DefaultEndpoint implements BrowsableEndpoint {
      * <p/>
      * You can set multiple expectations for different header names.
      * If you set a value of <tt>null</tt> that means we accept either the header is absent, or its value is <tt>null</tt>
-     * <p/>
-     * <b>Important:</b> The number of values must match the expected number of messages, so if you expect 3 messages, then
-     * there must be 3 values.
-     * <p/>
-     * <b>Important:</b> This overrides any previous set value using {@link #expectedMessageCount(int)}
      */
     public void expectedHeaderReceived(final String name, final Object value) {
         if (expectedHeaderValues == null) {
@@ -552,12 +541,7 @@ public class MockEndpoint extends DefaultEndpoint implements BrowsableEndpoint {
 
     /**
      * Adds an expectation that the given header values are received by this
-     * endpoint in any order.
-     * <p/>
-     * <b>Important:</b> The number of values must match the expected number of messages, so if you expect 3 messages, then
-     * there must be 3 values.
-     * <p/>
-     * <b>Important:</b> This overrides any previous set value using {@link #expectedMessageCount(int)}
+     * endpoint in any order
      */
     public void expectedHeaderValuesReceivedInAnyOrder(final String name, final List<?> values) {
         expectedMessageCount(values.size());
@@ -588,11 +572,6 @@ public class MockEndpoint extends DefaultEndpoint implements BrowsableEndpoint {
     /**
      * Adds an expectation that the given header values are received by this
      * endpoint in any order
-     * <p/>
-     * <b>Important:</b> The number of values must match the expected number of messages, so if you expect 3 messages, then
-     * there must be 3 values.
-     * <p/>
-     * <b>Important:</b> This overrides any previous set value using {@link #expectedMessageCount(int)}
      */
     public void expectedHeaderValuesReceivedInAnyOrder(String name, Object... values) {
         List<Object> valueList = new ArrayList<Object>();
@@ -643,11 +622,6 @@ public class MockEndpoint extends DefaultEndpoint implements BrowsableEndpoint {
     /**
      * Adds an expectation that the given body values are received by this
      * endpoint in the specified order
-     * <p/>
-     * <b>Important:</b> The number of values must match the expected number of messages, so if you expect 3 messages, then
-     * there must be 3 values.
-     * <p/>
-     * <b>Important:</b> This overrides any previous set value using {@link #expectedMessageCount(int)}
      */
     public void expectedBodiesReceived(final List<?> bodies) {
         expectedMessageCount(bodies.size());
@@ -710,11 +684,6 @@ public class MockEndpoint extends DefaultEndpoint implements BrowsableEndpoint {
 
     /**
      * Sets an expectation that the given body values are received by this endpoint
-     * <p/>
-     * <b>Important:</b> The number of bodies must match the expected number of messages, so if you expect 3 messages, then
-     * there must be 3 bodies.
-     * <p/>
-     * <b>Important:</b> This overrides any previous set value using {@link #expectedMessageCount(int)}
      */
     public void expectedBodiesReceived(Object... bodies) {
         List<Object> bodyList = new ArrayList<Object>();
@@ -746,11 +715,6 @@ public class MockEndpoint extends DefaultEndpoint implements BrowsableEndpoint {
     /**
      * Adds an expectation that the given body values are received by this
      * endpoint in any order
-     * <p/>
-     * <b>Important:</b> The number of bodies must match the expected number of messages, so if you expect 3 messages, then
-     * there must be 3 bodies.
-     * <p/>
-     * <b>Important:</b> This overrides any previous set value using {@link #expectedMessageCount(int)}
      */
     public void expectedBodiesReceivedInAnyOrder(final List<?> bodies) {
         expectedMessageCount(bodies.size());
@@ -774,11 +738,6 @@ public class MockEndpoint extends DefaultEndpoint implements BrowsableEndpoint {
     /**
      * Adds an expectation that the given body values are received by this
      * endpoint in any order
-     * <p/>
-     * <b>Important:</b> The number of bodies must match the expected number of messages, so if you expect 3 messages, then
-     * there must be 3 bodies.
-     * <p/>
-     * <b>Important:</b> This overrides any previous set value using {@link #expectedMessageCount(int)}
      */
     public void expectedBodiesReceivedInAnyOrder(Object... bodies) {
         List<Object> bodyList = new ArrayList<Object>();
@@ -1217,17 +1176,6 @@ public class MockEndpoint extends DefaultEndpoint implements BrowsableEndpoint {
      */
     public void setRetainLast(int retainLast) {
         this.retainLast = retainLast;
-    }
-
-    public int isReportGroup() {
-        return reportGroup;
-    }
-
-    /**
-     * A number that is used to turn on throughput logging based on groups of the size.
-     */
-    public void setReportGroup(int reportGroup) {
-        this.reportGroup = reportGroup;
     }
 
     public boolean isCopyOnExchange() {

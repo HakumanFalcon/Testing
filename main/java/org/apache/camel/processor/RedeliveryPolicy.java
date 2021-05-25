@@ -50,8 +50,6 @@ import org.slf4j.LoggerFactory;
  *   <li>logHandled = false</li>
  *   <li>logExhausted = true</li>
  *   <li>logExhaustedMessageHistory = true</li>
- *   <li>logNewException = true</li>
- *   <li>allowRedeliveryWhileStopping = true</li>
  * </ul>
  * <p/>
  * Setting the maximumRedeliveries to a negative value such as -1 will then always redeliver (unlimited).
@@ -97,7 +95,7 @@ public class RedeliveryPolicy implements Cloneable, Serializable {
     protected boolean logContinued;
     protected boolean logExhausted = true;
     protected boolean logNewException = true;
-    protected Boolean logExhaustedMessageHistory;
+    protected boolean logExhaustedMessageHistory = true;
     protected boolean logRetryAttempted = true;
     protected String delayPattern;
     protected boolean asyncDelayedRedelivery;
@@ -443,7 +441,7 @@ public class RedeliveryPolicy implements Cloneable, Serializable {
     /**
      * Sets the reference of the instance of {@link org.apache.camel.spi.ExchangeFormatter} to generate the log message from exchange.
      *
-     * @param exchangeFormatterRef name of the instance of {@link org.apache.camel.spi.ExchangeFormatter}
+     * @param reference name of the instance of {@link org.apache.camel.spi.ExchangeFormatter}
      * @return the builder
      */
     public RedeliveryPolicy exchangeFormatterRef(String exchangeFormatterRef) {
@@ -687,17 +685,6 @@ public class RedeliveryPolicy implements Cloneable, Serializable {
     }
 
     public boolean isLogExhaustedMessageHistory() {
-        // should default be enabled
-        return logExhaustedMessageHistory == null || logExhaustedMessageHistory;
-    }
-
-    /**
-     * Whether the option logExhaustedMessageHistory has been configured or not
-     *
-     * @return <tt>null</tt> if not configured, or the configured value as true or false
-     * @see #isLogExhaustedMessageHistory()
-     */
-    public Boolean getLogExhaustedMessageHistory() {
         return logExhaustedMessageHistory;
     }
 

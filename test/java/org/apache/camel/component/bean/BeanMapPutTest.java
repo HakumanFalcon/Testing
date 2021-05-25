@@ -52,7 +52,7 @@ public class BeanMapPutTest extends ContextTestSupport {
             @Override
             public void configure() throws Exception {
                 from("direct:start")
-                    .bean("myMap", "put('isMaster','true')");
+                    .beanRef("myMap", "put('isMaster','true')");
             }
         };
     }

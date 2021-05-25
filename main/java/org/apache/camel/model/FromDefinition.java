@@ -24,6 +24,7 @@ import javax.xml.bind.annotation.XmlTransient;
 
 import org.apache.camel.Endpoint;
 import org.apache.camel.spi.Metadata;
+import org.apache.camel.spi.Required;
 import org.apache.camel.spi.RouteContext;
 import org.apache.camel.util.ObjectHelper;
 
@@ -36,7 +37,7 @@ import org.apache.camel.util.ObjectHelper;
 @XmlRootElement(name = "from")
 @XmlAccessorType(XmlAccessType.FIELD)
 public class FromDefinition extends OptionalIdentifiedDefinition<FromDefinition> implements EndpointRequiredDefinition {
-    @XmlAttribute @Metadata(required = "true")
+    @XmlAttribute
     private String uri;
     @XmlAttribute
     @Deprecated
@@ -95,6 +96,7 @@ public class FromDefinition extends OptionalIdentifiedDefinition<FromDefinition>
      *
      * @param uri the endpoint URI to use
      */
+    @Required
     public void setUri(String uri) {
         clear();
         this.uri = uri;

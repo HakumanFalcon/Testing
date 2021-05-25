@@ -62,7 +62,7 @@ public abstract class GenericFileProcessStrategySupport<T> implements GenericFil
 
         // must release lock last
         if (exclusiveReadLockStrategy != null) {
-            exclusiveReadLockStrategy.releaseExclusiveReadLockOnAbort(operations, file, exchange);
+            exclusiveReadLockStrategy.releaseExclusiveReadLock(operations, file, exchange);
         }
     }
 
@@ -72,7 +72,7 @@ public abstract class GenericFileProcessStrategySupport<T> implements GenericFil
 
         // must release lock last
         if (exclusiveReadLockStrategy != null) {
-            exclusiveReadLockStrategy.releaseExclusiveReadLockOnCommit(operations, file, exchange);
+            exclusiveReadLockStrategy.releaseExclusiveReadLock(operations, file, exchange);
         }
     }
 
@@ -82,7 +82,7 @@ public abstract class GenericFileProcessStrategySupport<T> implements GenericFil
 
         // must release lock last
         if (exclusiveReadLockStrategy != null) {
-            exclusiveReadLockStrategy.releaseExclusiveReadLockOnRollback(operations, file, exchange);
+            exclusiveReadLockStrategy.releaseExclusiveReadLock(operations, file, exchange);
         }
     }
 

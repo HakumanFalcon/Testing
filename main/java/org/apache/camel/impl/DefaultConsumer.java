@@ -19,6 +19,7 @@ package org.apache.camel.impl;
 import org.apache.camel.AsyncProcessor;
 import org.apache.camel.Consumer;
 import org.apache.camel.Endpoint;
+import org.apache.camel.EndpointAware;
 import org.apache.camel.Exchange;
 import org.apache.camel.Processor;
 import org.apache.camel.Route;
@@ -41,7 +42,6 @@ import org.slf4j.LoggerFactory;
  */
 public class DefaultConsumer extends ServiceSupport implements Consumer, RouteAware {
     protected final Logger log = LoggerFactory.getLogger(getClass());
-    private transient String consumerToString;
     private final Endpoint endpoint;
     private final Processor processor;
     private volatile AsyncProcessor asyncProcessor;
@@ -56,10 +56,7 @@ public class DefaultConsumer extends ServiceSupport implements Consumer, RouteAw
 
     @Override
     public String toString() {
-        if (consumerToString == null) {
-            consumerToString = "Consumer[" + URISupport.sanitizeUri(endpoint.getEndpointUri()) + "]";
-        }
-        return consumerToString;
+        return "Consumer[" + URISupport.sanitizeUri(endpoint.getEndpointUri()) + "]";
     }
 
     public Route getRoute() {

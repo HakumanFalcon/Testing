@@ -113,7 +113,7 @@ public class OnCompletionGlobalTraceTest extends ContextTestSupport {
                 onCompletion().to("log:global").to("mock:sync");
 
                 from("direct:start")
-                    .process("myProcessor")
+                    .processRef("myProcessor")
                     .to("mock:result");
                 // END SNIPPET: e1
             }

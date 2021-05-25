@@ -25,7 +25,7 @@ import javax.xml.bind.annotation.XmlType;
  * @version 
  */
 @XmlType
-@XmlEnum
+@XmlEnum(String.class)
 public enum BindyType {
 
     Csv, Fixed, KeyValue

@@ -27,11 +27,12 @@ import javax.xml.bind.annotation.XmlElementRef;
 import javax.xml.bind.annotation.XmlRootElement;
 import javax.xml.bind.annotation.XmlTransient;
 
+import org.apache.camel.Endpoint;
 import org.apache.camel.ExchangePattern;
 import org.apache.camel.Expression;
 import org.apache.camel.Processor;
+import org.apache.camel.Producer;
 import org.apache.camel.processor.CamelInternalProcessor;
-import org.apache.camel.processor.SendDynamicProcessor;
 import org.apache.camel.processor.WireTapProcessor;
 import org.apache.camel.spi.Metadata;
 import org.apache.camel.spi.RouteContext;
@@ -43,7 +44,15 @@ import org.apache.camel.util.CamelContextHelper;
 @Metadata(label = "eip,endpoint,routing")
 @XmlRootElement(name = "wireTap")
 @XmlAccessorType(XmlAccessType.FIELD)
-public class WireTapDefinition<Type extends ProcessorDefinition<Type>> extends ToDynamicDefinition implements ExecutorServiceAwareDefinition<WireTapDefinition<Type>> {
+public class WireTapDefinition<Type extends ProcessorDefinition<Type>> extends NoOutputDefinition<WireTapDefinition<Type>>
+        implements ExecutorServiceAwareDefinition<WireTapDefinition<Type>>, EndpointRequiredDefinition {
+    @XmlAttribute
+    protected String uri;
+    @XmlAttribute
+    @Deprecated
+    protected String ref;
+    @XmlTransient
+    protected Endpoint endpoint;
     @XmlTransient
     private Processor newExchangeProcessor;
     @XmlAttribute(name = "processorRef")
@@ -66,29 +75,47 @@ public class WireTapDefinition<Type extends ProcessorDefinition<Type>> extends T
     public WireTapDefinition() {
     }
 
+    public WireTapDefinition(String uri) {
+        setUri(uri);
+    }
+
+    public WireTapDefinition(Endpoint endpoint) {
+        setEndpoint(endpoint);
+    }
+
+    @Override
+    public String getEndpointUri() {
+        if (uri != null) {
+            return uri;
+        } else if (endpoint != null) {
+            return endpoint.getEndpointUri();
+        } else {
+            return null;
+        }
+    }
+
     @Override
     public Processor createProcessor(RouteContext routeContext) throws Exception {
         // executor service is mandatory for wire tap
         boolean shutdownThreadPool = ProcessorDefinitionHelper.willCreateNewThreadPool(routeContext, this, true);
         ExecutorService threadPool = ProcessorDefinitionHelper.getConfiguredExecutorService(routeContext, "WireTap", this, true);
 
-        // must use InOnly for WireTap
-        setPattern(ExchangePattern.InOnly);
-
-        // create the send dynamic producer to send to the wire tapped endpoint
-        SendDynamicProcessor dynamicTo = (SendDynamicProcessor) super.createProcessor(routeContext);
+        // create the producer to send to the wire tapped endpoint
+        Endpoint endpoint = resolveEndpoint(routeContext);
+        Producer producer = endpoint.createProducer();
 
         // create error handler we need to use for processing the wire tapped
-        Processor target = wrapInErrorHandler(routeContext, dynamicTo);
+        Processor target = wrapInErrorHandler(routeContext, producer);
 
         // and wrap in unit of work
+        String routeId = routeContext.getRoute().idOrCreate(routeContext.getCamelContext().getNodeIdFactory());
         CamelInternalProcessor internal = new CamelInternalProcessor(target);
-        internal.addAdvice(new CamelInternalProcessor.UnitOfWorkProcessorAdvice(routeContext));
+        internal.addAdvice(new CamelInternalProcessor.UnitOfWorkProcessorAdvice(routeId));
 
         // is true bt default
         boolean isCopy = getCopy() == null || getCopy();
 
-        WireTapProcessor answer = new WireTapProcessor(dynamicTo, internal, getPattern(), threadPool, shutdownThreadPool);
+        WireTapProcessor answer = new WireTapProcessor(endpoint, internal, getPattern(), threadPool, shutdownThreadPool);
         answer.setCopy(isCopy);
         if (newExchangeProcessorRef != null) {
             newExchangeProcessor = routeContext.mandatoryLookup(newExchangeProcessorRef, Processor.class);
@@ -121,12 +148,16 @@ public class WireTapDefinition<Type extends ProcessorDefinition<Type>> extends T
 
     @Override
     public String toString() {
-        return "WireTap[" + getUri() + "]";
+        return "WireTap[" + description() + "]";
     }
     
+    protected String description() {
+        return FromDefinition.description(getUri(), getRef(), getEndpoint());
+    }
+
     @Override
     public String getLabel() {
-        return "wireTap[" + getUri() + "]";
+        return "wireTap[" + description() + "]";
     }
 
     @Override
@@ -140,6 +171,14 @@ public class WireTapDefinition<Type extends ProcessorDefinition<Type>> extends T
     public void addOutput(ProcessorDefinition<?> output) {
         // add outputs on parent as this wiretap does not support outputs
         getParent().addOutput(output);
+    }
+
+    public Endpoint resolveEndpoint(RouteContext context) {
+        if (endpoint == null) {
+            return context.resolveEndpoint(getUri(), getRef());
+        } else {
+            return endpoint;
+        }
     }
 
     // Fluent API
@@ -207,7 +246,7 @@ public class WireTapDefinition<Type extends ProcessorDefinition<Type>> extends T
      * @see #newExchangeHeader(String, org.apache.camel.Expression)
      */
     public WireTapDefinition<Type> newExchangeBody(Expression expression) {
-        setNewExchangeExpression(new ExpressionSubElementDefinition(expression));
+        setNewExchangeExpression(expression);
         return this;
     }
 
@@ -276,44 +315,37 @@ public class WireTapDefinition<Type extends ProcessorDefinition<Type>> extends T
         return this;
     }
 
-    /**
-     * Sets the maximum size used by the {@link org.apache.camel.impl.ProducerCache} which is used
-     * to cache and reuse producers, when uris are reused.
-     *
-     * @param cacheSize  the cache size, use <tt>0</tt> for default cache size, or <tt>-1</tt> to turn cache off.
-     * @return the builder
-     */
-    @Override
-    public WireTapDefinition<Type> cacheSize(int cacheSize) {
-        setCacheSize(cacheSize);
-        return this;
-    }
-
-    /**
-     * Ignore the invalidate endpoint exception when try to create a producer with that endpoint
-     *
-     * @return the builder
-     */
-    @Override
-    public WireTapDefinition<Type> ignoreInvalidEndpoint() {
-        setIgnoreInvalidEndpoint(true);
-        return this;
-    }
-
-    // Properties
-    //-------------------------------------------------------------------------
-
-    @Override
     public String getUri() {
-        return super.getUri();
+        return uri;
     }
 
     /**
-     * The uri of the endpoint to wiretap to. The uri can be dynamic computed using the {@link org.apache.camel.language.simple.SimpleLanguage} expression.
+     * Uri of the endpoint to use as wire tap
      */
-    @Override
     public void setUri(String uri) {
-        super.setUri(uri);
+        this.uri = uri;
+    }
+
+    public String getRef() {
+        return ref;
+    }
+
+    /**
+     * Reference of the endpoint to use as wire tap
+     *
+     * @deprecated use uri with ref:uri instead
+     */
+    @Deprecated
+    public void setRef(String ref) {
+        this.ref = ref;
+    }
+
+    public Endpoint getEndpoint() {
+        return endpoint;
+    }
+
+    public void setEndpoint(Endpoint endpoint) {
+        this.endpoint = endpoint;
     }
 
     public Processor getNewExchangeProcessor() {
@@ -343,10 +375,14 @@ public class WireTapDefinition<Type extends ProcessorDefinition<Type>> extends T
     }
 
     /**
-     * Uses the expression for creating a new body as the message to use for wire tapping
+     * Expression used for creating a new body as the message to use for wire tapping
      */
-    public void setNewExchangeExpression(ExpressionSubElementDefinition newExchangeExpression) {
-        this.newExchangeExpression = newExchangeExpression;
+    public void setNewExchangeExpression(ExpressionSubElementDefinition expression) {
+        this.newExchangeExpression = expression;
+    }
+
+    public void setNewExchangeExpression(Expression expression) {
+        this.newExchangeExpression = new ExpressionSubElementDefinition(expression);
     }
 
     public ExecutorService getExecutorService() {
@@ -396,5 +432,4 @@ public class WireTapDefinition<Type extends ProcessorDefinition<Type>> extends T
     public void setHeaders(List<SetHeaderDefinition> headers) {
         this.headers = headers;
     }
-
 }

@@ -22,8 +22,6 @@ import java.util.concurrent.TimeUnit;
 import org.apache.camel.AsyncCallback;
 import org.apache.camel.Exchange;
 import org.apache.camel.Processor;
-import org.apache.camel.Traceable;
-import org.apache.camel.spi.IdAware;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -40,10 +38,9 @@ import org.slf4j.LoggerFactory;
  *
  * @version 
  */
-public class SamplingThrottler extends DelegateAsyncProcessor implements Traceable, IdAware {
+public class SamplingThrottler extends DelegateAsyncProcessor {
 
-    private static final Logger LOG = LoggerFactory.getLogger(SamplingThrottler.class);
-    private String id;
+    protected final Logger log = LoggerFactory.getLogger(getClass());
     private long messageFrequency;
     private long currentMessageCount;
     private long samplePeriod;
@@ -86,32 +83,12 @@ public class SamplingThrottler extends DelegateAsyncProcessor implements Traceab
         }
     }
 
-    public String getId() {
-        return id;
-    }
-
-    public void setId(String id) {
-        this.id = id;
-    }
-
     public String getTraceLabel() {
         if (messageFrequency > 0) {
             return "samplingThrottler[1 exchange per: " + messageFrequency + " messages received]";
         } else {
             return "samplingThrottler[1 exchange per: " + samplePeriod + " " + units.toString().toLowerCase(Locale.ENGLISH) + "]";
         }
-    }
-
-    public long getMessageFrequency() {
-        return messageFrequency;
-    }
-
-    public long getSamplePeriod() {
-        return samplePeriod;
-    }
-
-    public TimeUnit getUnits() {
-        return units;
     }
 
     @Override
@@ -129,13 +106,13 @@ public class SamplingThrottler extends DelegateAsyncProcessor implements Traceab
                 long now = System.currentTimeMillis();
                 if (now >= timeOfLastExchange + periodInMillis) {
                     doSend = true;
-                    if (LOG.isTraceEnabled()) {
-                        LOG.trace(sampled.sample());
+                    if (log.isTraceEnabled()) {
+                        log.trace(sampled.sample());
                     }
                     timeOfLastExchange = now;
                 } else {
-                    if (LOG.isTraceEnabled()) {
-                        LOG.trace(sampled.drop());
+                    if (log.isTraceEnabled()) {
+                        log.trace(sampled.drop());
                     }
                 }
             }

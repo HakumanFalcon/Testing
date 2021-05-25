@@ -51,7 +51,7 @@ public class WireTapOnPrepareTest extends ContextTestSupport {
             public void configure() throws Exception {
                 // START SNIPPET: e1
                 from("direct:start")
-                    .wireTap("direct:a", new AnimalDeepClonePrepare())
+                    .wireTap("direct:a").onPrepare(new AnimalDeepClonePrepare())
                     .to("direct:b");
                 // END SNIPPET: e1
 

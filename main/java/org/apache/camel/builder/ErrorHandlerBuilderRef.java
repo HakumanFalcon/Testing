@@ -99,18 +99,6 @@ public class ErrorHandlerBuilderRef extends ErrorHandlerBuilderSupport {
      * @return the error handler
      */
     public static ErrorHandlerFactory lookupErrorHandlerBuilder(RouteContext routeContext, String ref) {
-        return lookupErrorHandlerBuilder(routeContext, ref, true);
-    }
-
-    /**
-     * Lookup the error handler by the given ref
-     *
-     * @param routeContext the route context
-     * @param ref          reference id for the error handler
-     * @param mandatory    whether the error handler must exists, if not a {@link org.apache.camel.NoSuchBeanException} is thrown
-     * @return the error handler
-     */
-    public static ErrorHandlerFactory lookupErrorHandlerBuilder(RouteContext routeContext, String ref, boolean mandatory) {
         ErrorHandlerFactory answer;
 
         // if the ref is the default then we do not have any explicit error handler configured
@@ -146,11 +134,7 @@ public class ErrorHandlerBuilderRef extends ErrorHandlerBuilderSupport {
             }
         } else {
             // use specific configured error handler
-            if (mandatory) {
-                answer = routeContext.mandatoryLookup(ref, ErrorHandlerBuilder.class);
-            } else {
-                answer = routeContext.lookup(ref, ErrorHandlerBuilder.class);
-            }
+            answer = routeContext.mandatoryLookup(ref, ErrorHandlerBuilder.class);
         }
 
         return answer;

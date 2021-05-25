@@ -44,7 +44,6 @@ public class MockComponent extends UriEndpointComponent {
         if (value != null) {
             Processor reporter = new ThroughputLogger(new CamelLogger("org.apache.camel.component.mock:" + remaining), value);
             endpoint.setReporter(reporter);
-            endpoint.setReportGroup(value);
         }
         return endpoint;
     }

@@ -18,7 +18,9 @@ package org.apache.camel.management;
 
 import javax.management.MBeanServer;
 
+import org.apache.camel.CamelContext;
 import org.apache.camel.ContextTestSupport;
+import org.apache.camel.impl.DefaultCamelContext;
 
 /**
  * Base class for JMX tests.
@@ -30,6 +32,11 @@ public abstract class ManagementTestSupport extends ContextTestSupport {
     @Override
     protected boolean useJmx() {
         return true;
+    }
+
+    protected CamelContext createCamelContext() throws Exception {
+        CamelContext context = new DefaultCamelContext();
+        return context;
     }
 
     protected MBeanServer getMBeanServer() {

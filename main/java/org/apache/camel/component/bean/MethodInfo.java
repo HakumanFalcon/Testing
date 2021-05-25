@@ -413,7 +413,7 @@ public class MethodInfo {
         }
     }
 
-    protected Expression[] createParameterExpressions() {
+    protected Expression createParametersExpression() {
         final int size = parameters.size();
         LOG.trace("Creating parameters expression for {} parameters", size);
 
@@ -423,16 +423,10 @@ public class MethodInfo {
             expressions[i] = parameterExpression;
             LOG.trace("Parameter #{} has expression: {}", i, parameterExpression);
         }
-
-        return expressions;
-    }
-
-    protected Expression createParametersExpression() {
-        final Expression[] expressions = createParameterExpressions();
         return new Expression() {
             @SuppressWarnings("unchecked")
             public <T> T evaluate(Exchange exchange, Class<T> type) {
-                Object[] answer = new Object[expressions.length];
+                Object[] answer = new Object[size];
                 Object body = exchange.getIn().getBody();
                 boolean multiParameterArray = false;
                 if (exchange.getIn().getHeader(Exchange.BEAN_MULTI_PARAMETER_ARRAY) != null) {
@@ -466,7 +460,7 @@ public class MethodInfo {
                 exchange.getIn().removeHeader(Exchange.BEAN_MULTI_PARAMETER_ARRAY);
                 exchange.getIn().removeHeader(Exchange.BEAN_METHOD_NAME);
 
-                for (int i = 0; i < expressions.length; i++) {
+                for (int i = 0; i < size; i++) {
                     // grab the parameter value for the given index
                     Object parameterValue = it != null && it.hasNext() ? it.next() : null;
                     // and the expected parameter type

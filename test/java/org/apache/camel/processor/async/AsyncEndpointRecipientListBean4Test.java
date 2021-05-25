@@ -64,7 +64,7 @@ public class AsyncEndpointRecipientListBean4Test extends ContextTestSupport {
                             beforeThreadName = Thread.currentThread().getName();
                         }
                     })
-                    .bean("myBean");
+                    .beanRef("myBean");
 
                 from("direct:foo")
                     .process(new Processor() {

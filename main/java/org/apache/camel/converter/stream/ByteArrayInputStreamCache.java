@@ -22,7 +22,6 @@ import java.io.FilterInputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 
-import org.apache.camel.Exchange;
 import org.apache.camel.StreamCache;
 import org.apache.camel.util.IOHelper;
 
@@ -52,7 +51,7 @@ public class ByteArrayInputStreamCache extends FilterInputStream implements Stre
         IOHelper.copyAndCloseInput(in, os);
     }
 
-    public StreamCache copy(Exchange exchange) throws IOException {
+    public StreamCache copy() throws IOException {
         if (byteArrayForCopy == null) {
             ByteArrayOutputStream baos = new ByteArrayOutputStream(in.available());
             IOHelper.copy(in, baos);

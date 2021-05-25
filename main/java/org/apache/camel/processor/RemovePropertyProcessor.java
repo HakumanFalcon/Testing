@@ -20,15 +20,13 @@ import org.apache.camel.AsyncCallback;
 import org.apache.camel.AsyncProcessor;
 import org.apache.camel.Exchange;
 import org.apache.camel.Traceable;
-import org.apache.camel.spi.IdAware;
 import org.apache.camel.support.ServiceSupport;
 import org.apache.camel.util.AsyncProcessorHelper;
 
 /**
  * A processor which removes the property from the exchange
  */
-public class RemovePropertyProcessor extends ServiceSupport implements AsyncProcessor, Traceable, IdAware {
-    private String id;
+public class RemovePropertyProcessor extends ServiceSupport implements AsyncProcessor, Traceable {
     private final String propertyName;
 
     public RemovePropertyProcessor(String propertyName) {
@@ -58,18 +56,6 @@ public class RemovePropertyProcessor extends ServiceSupport implements AsyncProc
 
     public String getTraceLabel() {
         return "removeProperty[" + propertyName + "]";
-    }
-
-    public String getId() {
-        return id;
-    }
-
-    public void setId(String id) {
-        this.id = id;
-    }
-
-    public String getPropertyName() {
-        return propertyName;
     }
 
     @Override

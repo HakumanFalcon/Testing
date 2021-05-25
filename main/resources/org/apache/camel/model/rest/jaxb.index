@@ -14,11 +14,9 @@
 ## See the License for the specific language governing permissions and
 ## limitations under the License.
 ## ------------------------------------------------------------------------
-CollectionFormat
 DeleteVerbDefinition
 GetVerbDefinition
 HeadVerbDefinition
-OptionsVerbDefinition
 PostVerbDefinition
 PutVerbDefinition
 RestBindingDefinition
@@ -26,9 +24,6 @@ RestBindingMode
 RestConfigurationDefinition
 RestDefinition
 RestHostNameResolver
-RestOperationParamDefinition
-RestOperationResponseMsgDefinition
-RestParamType
 RestPropertyDefinition
 RestsDefinition
 VerbDefinition

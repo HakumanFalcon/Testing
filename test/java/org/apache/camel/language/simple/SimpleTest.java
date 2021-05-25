@@ -105,10 +105,6 @@ public class SimpleTest extends LanguageTestSupport {
         assertNull(SimpleLanguage.simple("${null}").evaluate(exchange, Object.class));
     }
 
-    public void testSimpleFileDir() throws Exception {
-        assertExpression("file:mydir", "file:mydir");
-    }
-
     public void testEmptyExpression() throws Exception {
         assertExpression("", "");
         assertExpression(" ", " ");
@@ -127,23 +123,6 @@ public class SimpleTest extends LanguageTestSupport {
         } catch (IllegalArgumentException e) {
             assertEquals("expression must be specified", e.getMessage());
         }
-    }
-
-    public void testExchangeExpression() throws Exception {
-        Expression exp = SimpleLanguage.simple("${exchange}");
-        assertNotNull(exp);
-        assertEquals(exchange, exp.evaluate(exchange, Object.class));
-
-        assertExpression("exchange", exchange);
-    }
-
-    public void testExchangeOgnlExpression() throws Exception {
-        Expression exp = SimpleLanguage.simple("${exchange.exchangeId}");
-        assertNotNull(exp);
-        assertEquals(exchange.getExchangeId(), exp.evaluate(exchange, Object.class));
-
-        assertExpression("exchange.exchangeId", exchange.getExchangeId());
-        assertExpression("exchange.class.name", "org.apache.camel.impl.DefaultExchange");
     }
 
     public void testBodyExpression() throws Exception {
@@ -1383,11 +1362,6 @@ public class SimpleTest extends LanguageTestSupport {
         assertExpression("${type:org.apache.camel.ExchangePattern.UNKNOWN}", null);
     }
 
-    public void testTypeConstantInnerClass() throws Exception {
-        assertExpression("${type:org.apache.camel.language.simple.Constants$MyInnerStuff.FOO}", 123);
-        assertExpression("${type:org.apache.camel.language.simple.Constants.BAR}", 456);
-    }
-
     public void testStringArrayLength() throws Exception {
         exchange.getIn().setBody(new String[]{"foo", "bar"});
         assertExpression("${body[0]}", "foo");
@@ -1395,14 +1369,6 @@ public class SimpleTest extends LanguageTestSupport {
         assertExpression("${body.length}", 2);
 
         exchange.getIn().setBody(new String[]{"foo", "bar", "beer"});
-        assertExpression("${body.length}", 3);
-    }
-
-    public void testByteArrayLength() throws Exception {
-        exchange.getIn().setBody(new byte[]{65, 66, 67});
-        assertExpression("${body[0]}", 65);
-        assertExpression("${body[1]}", 66);
-        assertExpression("${body[2]}", 67);
         assertExpression("${body.length}", 3);
     }
 
@@ -1424,87 +1390,6 @@ public class SimpleTest extends LanguageTestSupport {
         assertPredicate("${body[isCredit]} == false", true);
         assertPredicate("${body['isCredit']} == true", false);
         assertPredicate("${body['isCredit']} == false", true);
-    }
-
-    public void testSimpleRegexp() throws Exception {
-        exchange.getIn().setBody("12345678");
-        assertPredicate("${body} regex '\\d+'", true);
-        assertPredicate("${body} regex '\\w{1,4}'", false);
-
-        exchange.getIn().setBody("tel:+97444549697");
-        assertPredicate("${body} regex '^(tel:\\+)(974)(44)(\\d+)|^(974)(44)(\\d+)'", true);
-
-        exchange.getIn().setBody("97444549697");
-        assertPredicate("${body} regex '^(tel:\\+)(974)(44)(\\d+)|^(974)(44)(\\d+)'", true);
-
-        exchange.getIn().setBody("tel:+87444549697");
-        assertPredicate("${body} regex '^(tel:\\+)(974)(44)(\\d+)|^(974)(44)(\\d+)'", false);
-
-        exchange.getIn().setBody("87444549697");
-        assertPredicate("${body} regex '^(tel:\\+)(974)(44)(\\d+)|^(974)(44)(\\d+)'", false);
-    }
-    
-    public void testRandomExpression() throws Exception {
-        int min = 1;
-        int max = 10;
-        int iterations = 30;
-        int i = 0;
-        for (i = 0; i < iterations; i++) {
-            Expression expression = SimpleLanguage.simple("random(1,10)", Integer.class);
-            assertTrue(min <= expression.evaluate(exchange, Integer.class) && expression.evaluate(exchange, Integer.class) < max);
-        }
-        for (i = 0; i < iterations; i++) {
-            Expression expression = SimpleLanguage.simple("random(10)", Integer.class);
-            assertTrue(0 <= expression.evaluate(exchange, Integer.class) && expression.evaluate(exchange, Integer.class) < max);
-        }
-        Expression expression = SimpleLanguage.simple("random(1, 10)", Integer.class);
-        assertTrue(min <= expression.evaluate(exchange, Integer.class) && expression.evaluate(exchange, Integer.class) < max);
-        
-        Expression expression1 = SimpleLanguage.simple("random( 10)", Integer.class);
-        assertTrue(0 <= expression1.evaluate(exchange, Integer.class) && expression1.evaluate(exchange, Integer.class) < max);
-        
-        try {
-            assertExpression("random(10,21,30)", null);
-            fail("Should have thrown exception");
-        } catch (SimpleParserException e) {
-            assertEquals("Valid syntax: ${random(min,max)} or ${random(max)} was: random(10,21,30)", e.getMessage());
-        }
-        try {
-            assertExpression("random()", null);
-            fail("Should have thrown exception");
-        } catch (SimpleParserException e) {
-            assertEquals("Valid syntax: ${random(min,max)} or ${random(max)} was: random()", e.getMessage());
-        }
-    }
-
-    public void testListRemoveByInstance() throws Exception {
-        List<Object> data = new ArrayList<Object>();
-        data.add("A");
-        data.add("B");
-        exchange.getIn().setBody(data);
-
-        assertEquals(2, data.size());
-
-        Expression expression = SimpleLanguage.simple("${body.remove('A')}");
-        expression.evaluate(exchange, Object.class);
-
-        assertEquals(1, data.size());
-        assertEquals("B", data.get(0));
-    }
-
-    public void testListRemoveIndex() throws Exception {
-        List<Object> data = new ArrayList<Object>();
-        data.add("A");
-        data.add("B");
-        exchange.getIn().setBody(data);
-
-        assertEquals(2, data.size());
-
-        Expression expression = SimpleLanguage.simple("${body.remove(0)}");
-        expression.evaluate(exchange, Object.class);
-
-        assertEquals(1, data.size());
-        assertEquals("B", data.get(0));
     }
 
     protected String getLanguageName() {

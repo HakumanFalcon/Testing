@@ -45,7 +45,8 @@ public class FileChangedReadLockMinAgeTest extends ContextTestSupport {
         MockEndpoint mock = getMockEndpoint("mock:result");
         mock.expectedMessageCount(1);
         mock.expectedFileExists("target/changed/out/slowfile.dat");
-        mock.expectedMessagesMatches(exchangeProperty(Exchange.RECEIVED_TIMESTAMP).convertTo(long.class).isGreaterThan(new Date().getTime() + 3000));
+        // writing takes ~2 seconds, and then it has to age for at least minAge milliseconds (3 seconds)
+        mock.expectedMessagesMatches(property(Exchange.RECEIVED_TIMESTAMP).convertTo(long.class).isGreaterThan(new Date().getTime() + 5000));
 
         writeSlowFile();
 

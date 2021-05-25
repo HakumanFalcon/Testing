@@ -50,7 +50,6 @@ public final class SimpleTokenizer {
 
         // binary operators
         KNOWN_TOKENS.add(new SimpleTokenType(TokenType.binaryOperator, "=="));
-        KNOWN_TOKENS.add(new SimpleTokenType(TokenType.binaryOperator, "=~"));
         KNOWN_TOKENS.add(new SimpleTokenType(TokenType.binaryOperator, ">="));
         KNOWN_TOKENS.add(new SimpleTokenType(TokenType.binaryOperator, "<="));
         KNOWN_TOKENS.add(new SimpleTokenType(TokenType.binaryOperator, ">"));

@@ -31,15 +31,15 @@ public class PropertiesRouteFromTest extends ContextTestSupport {
 
     public void testPropertiesRouteFrom() throws Exception {
         ProcessorDefinition out = context.getRouteDefinition("foo").getOutputs().get(0);
-        assertEquals("{{cool.end}}", ((SendDefinition) out).getUri());
+        assertEquals("mock:result", ((SendDefinition) out).getUri());
 
         String uri = context.getRouteDefinition("foo").getInputs().get(0).getUri();
-        assertEquals("{{cool.start}}", uri);
+        assertEquals("direct:cool", uri);
 
         // use a routes definition to dump the routes
         String xml = ModelHelper.dumpModelAsXml(context, context.getRouteDefinition("foo"));
-        assertTrue(xml.contains("<from uri=\"{{cool.start}}\"/>"));
-        assertTrue(xml.contains("<to uri=\"{{cool.end}}\""));
+        assertTrue(xml.contains("<from uri=\"direct:cool\"/>"));
+        assertTrue(xml.contains("<to uri=\"mock:result\""));
     }
 
     @Override

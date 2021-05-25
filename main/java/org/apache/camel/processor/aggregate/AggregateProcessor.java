@@ -28,7 +28,6 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -44,15 +43,12 @@ import org.apache.camel.NoSuchEndpointException;
 import org.apache.camel.Predicate;
 import org.apache.camel.Processor;
 import org.apache.camel.ProducerTemplate;
-import org.apache.camel.ShutdownRunningTask;
 import org.apache.camel.TimeoutMap;
 import org.apache.camel.Traceable;
 import org.apache.camel.spi.AggregationRepository;
 import org.apache.camel.spi.ExceptionHandler;
-import org.apache.camel.spi.IdAware;
 import org.apache.camel.spi.OptimisticLockingAggregationRepository;
 import org.apache.camel.spi.RecoverableAggregationRepository;
-import org.apache.camel.spi.ShutdownAware;
 import org.apache.camel.spi.ShutdownPrepared;
 import org.apache.camel.spi.Synchronization;
 import org.apache.camel.support.DefaultTimeoutMap;
@@ -83,7 +79,7 @@ import org.slf4j.LoggerFactory;
  * and older prices are discarded). Another idea is to combine line item messages
  * together into a single invoice message.
  */
-public class AggregateProcessor extends ServiceSupport implements AsyncProcessor, Navigate<Processor>, Traceable, ShutdownPrepared, ShutdownAware, IdAware {
+public class AggregateProcessor extends ServiceSupport implements AsyncProcessor, Navigate<Processor>, Traceable, ShutdownPrepared {
 
     public static final String AGGREGATE_TIMEOUT_CHECKER = "AggregateTimeoutChecker";
 
@@ -92,11 +88,8 @@ public class AggregateProcessor extends ServiceSupport implements AsyncProcessor
     private final Lock lock = new ReentrantLock();
     private final CamelContext camelContext;
     private final Processor processor;
-    private String id;
     private AggregationStrategy aggregationStrategy;
-    private boolean preCompletion;
     private Expression correlationExpression;
-    private AggregateController aggregateController;
     private final ExecutorService executorService;
     private final boolean shutdownExecutorService;
     private OptimisticLockRetryPolicy optimisticLockRetryPolicy = new OptimisticLockRetryPolicy();
@@ -112,80 +105,9 @@ public class AggregateProcessor extends ServiceSupport implements AsyncProcessor
     private final Set<String> inProgressCompleteExchanges = Collections.newSetFromMap(new ConcurrentHashMap<String, Boolean>());
     private final Map<String, RedeliveryData> redeliveryState = new ConcurrentHashMap<String, RedeliveryData>();
 
-    private final AggregateProcessorStatistics statistics = new Statistics();
-    private final AtomicLong totalIn = new AtomicLong();
-    private final AtomicLong totalCompleted = new AtomicLong();
-    private final AtomicLong completedBySize = new AtomicLong();
-    private final AtomicLong completedByStrategy = new AtomicLong();
-    private final AtomicLong completedByInterval = new AtomicLong();
-    private final AtomicLong completedByTimeout = new AtomicLong();
-    private final AtomicLong completedByPredicate = new AtomicLong();
-    private final AtomicLong completedByBatchConsumer = new AtomicLong();
-    private final AtomicLong completedByForce = new AtomicLong();
-
     // keep booking about redelivery
     private class RedeliveryData {
         int redeliveryCounter;
-    }
-
-    private class Statistics implements AggregateProcessorStatistics {
-
-        private boolean statisticsEnabled = true;
-
-        public long getTotalIn() {
-            return totalIn.get();
-        }
-
-        public long getTotalCompleted() {
-            return totalCompleted.get();
-        }
-
-        public long getCompletedBySize() {
-            return completedBySize.get();
-        }
-
-        public long getCompletedByStrategy() {
-            return completedByStrategy.get();
-        }
-
-        public long getCompletedByInterval() {
-            return completedByInterval.get();
-        }
-
-        public long getCompletedByTimeout() {
-            return completedByTimeout.get();
-        }
-
-        public long getCompletedByPredicate() {
-            return completedByPredicate.get();
-        }
-
-        public long getCompletedByBatchConsumer() {
-            return completedByBatchConsumer.get();
-        }
-
-        public long getCompletedByForce() {
-            return completedByForce.get();
-        }
-
-        public void reset() {
-            totalIn.set(0);
-            totalCompleted.set(0);
-            completedBySize.set(0);
-            completedByStrategy.set(0);
-            completedByTimeout.set(0);
-            completedByPredicate.set(0);
-            completedByBatchConsumer.set(0);
-            completedByForce.set(0);
-        }
-
-        public boolean isStatisticsEnabled() {
-            return statisticsEnabled;
-        }
-
-        public void setStatisticsEnabled(boolean statisticsEnabled) {
-            this.statisticsEnabled = statisticsEnabled;
-        }
     }
 
     // options
@@ -206,7 +128,6 @@ public class AggregateProcessor extends ServiceSupport implements AsyncProcessor
     private AtomicInteger batchConsumerCounter = new AtomicInteger();
     private boolean discardOnCompletionTimeout;
     private boolean forceCompletionOnStop;
-    private boolean completeAllOnStop;
 
     private ProducerTemplate deadLetterProducerTemplate;
 
@@ -249,14 +170,6 @@ public class AggregateProcessor extends ServiceSupport implements AsyncProcessor
         return processor != null;
     }
 
-    public String getId() {
-        return id;
-    }
-
-    public void setId(String id) {
-        this.id = id;
-    }
-
     public void process(Exchange exchange) throws Exception {
         AsyncProcessorHelper.process(this, exchange);
     }
@@ -272,10 +185,6 @@ public class AggregateProcessor extends ServiceSupport implements AsyncProcessor
     }
 
     protected void doProcess(Exchange exchange) throws Exception {
-
-        if (getStatistics().isStatisticsEnabled()) {
-            totalIn.incrementAndGet();
-        }
 
         //check for the special header to force completion of all groups (and ignore the exchange otherwise)
         boolean completeAllGroups = exchange.getIn().getHeader(Exchange.AGGREGATION_COMPLETE_ALL_GROUPS, false, boolean.class);
@@ -379,9 +288,6 @@ public class AggregateProcessor extends ServiceSupport implements AsyncProcessor
     private List<Exchange> doAggregation(String key, Exchange newExchange) throws CamelExchangeException {
         LOG.trace("onAggregation +++ start +++ with correlation key: {}", key);
 
-        List<Exchange> list = new ArrayList<Exchange>();
-        String complete = null;
-
         Exchange answer;
         Exchange originalExchange = aggregationRepository.get(newExchange.getContext(), key);
         Exchange oldExchange = originalExchange;
@@ -397,56 +303,22 @@ public class AggregateProcessor extends ServiceSupport implements AsyncProcessor
             size++;
         }
 
-        // prepare the exchanges for aggregation
-        ExchangeHelper.prepareAggregation(oldExchange, newExchange);
-
-        // check if we are pre complete
-        if (preCompletion) {
-            try {
-                // put the current aggregated size on the exchange so its avail during completion check
-                newExchange.setProperty(Exchange.AGGREGATED_SIZE, size);
-                complete = isPreCompleted(key, oldExchange, newExchange);
-                // make sure to track timeouts if not complete
-                if (complete == null) {
-                    trackTimeout(key, newExchange);
-                }
-                // remove it afterwards
-                newExchange.removeProperty(Exchange.AGGREGATED_SIZE);
-            } catch (Throwable e) {
-                // must catch any exception from aggregation
-                throw new CamelExchangeException("Error occurred during preComplete", newExchange, e);
-            }
-        } else if (isEagerCheckCompletion()) {
+        // check if we are complete
+        String complete = null;
+        if (isEagerCheckCompletion()) {
             // put the current aggregated size on the exchange so its avail during completion check
             newExchange.setProperty(Exchange.AGGREGATED_SIZE, size);
             complete = isCompleted(key, newExchange);
-            // make sure to track timeouts if not complete
-            if (complete == null) {
-                trackTimeout(key, newExchange);
-            }
             // remove it afterwards
             newExchange.removeProperty(Exchange.AGGREGATED_SIZE);
         }
 
-        if (preCompletion && complete != null) {
-            // need to pre complete the current group before we aggregate
-            doAggregationComplete(complete, list, key, originalExchange, oldExchange);
-            // as we complete the current group eager, we should indicate the new group is not complete
-            complete = null;
-            // and clear old/original exchange as we start on a new group
-            oldExchange = null;
-            originalExchange = null;
-            // and reset the size to 1
-            size = 1;
-            // make sure to track timeout as we just restart the correlation group when we are in pre completion mode
-            trackTimeout(key, newExchange);
-        }
-
-        // aggregate the exchanges
+        // prepare the exchanges for aggregation and then aggregate them
+        ExchangeHelper.prepareAggregation(oldExchange, newExchange);
+        // must catch any exception from aggregation
         try {
             answer = onAggregation(oldExchange, newExchange);
         } catch (Throwable e) {
-            // must catch any exception from aggregation
             throw new CamelExchangeException("Error occurred during aggregation", newExchange, e);
         }
         if (answer == null) {
@@ -457,55 +329,50 @@ public class AggregateProcessor extends ServiceSupport implements AsyncProcessor
         answer.setProperty(Exchange.AGGREGATED_SIZE, size);
 
         // maybe we should check completion after the aggregation
-        if (!preCompletion && !isEagerCheckCompletion()) {
+        if (!isEagerCheckCompletion()) {
             complete = isCompleted(key, answer);
-            // make sure to track timeouts if not complete
-            if (complete == null) {
-                trackTimeout(key, newExchange);
-            }
         }
 
+        List<Exchange> list = new ArrayList<Exchange>();
+
+        // only need to update aggregation repository if we are not complete
         if (complete == null) {
-            // only need to update aggregation repository if we are not complete
             doAggregationRepositoryAdd(newExchange.getContext(), key, originalExchange, answer);
+            // we are not complete so the answer should be null
+            answer = null;
         } else {
-            // if we are complete then add the answer to the list
-            doAggregationComplete(complete, list, key, originalExchange, answer);
+            // if batch consumer completion is enabled then we need to complete the group
+            if ("consumer".equals(complete)) {
+                for (String batchKey : batchConsumerCorrelationKeys) {
+                    Exchange batchAnswer;
+                    if (batchKey.equals(key)) {
+                        // skip the current aggregated key as we have already aggregated it and have the answer
+                        batchAnswer = answer;
+                    } else {
+                        batchAnswer = aggregationRepository.get(camelContext, batchKey);
+                    }
+
+                    if (batchAnswer != null) {
+                        batchAnswer.setProperty(Exchange.AGGREGATED_COMPLETED_BY, complete);
+                        onCompletion(batchKey, originalExchange, batchAnswer, false);
+                        list.add(batchAnswer);
+                    }
+                }
+                batchConsumerCorrelationKeys.clear();
+                // we have already submitted to completion, so answer should be null
+                answer = null;
+            } else {
+                // we are complete for this exchange
+                answer.setProperty(Exchange.AGGREGATED_COMPLETED_BY, complete);
+                answer = onCompletion(key, originalExchange, answer, false);
+            }
         }
 
         LOG.trace("onAggregation +++  end  +++ with correlation key: {}", key);
-        return list;
-    }
-
-    protected void doAggregationComplete(String complete, List<Exchange> list, String key, Exchange originalExchange, Exchange answer) {
-        if ("consumer".equals(complete)) {
-            for (String batchKey : batchConsumerCorrelationKeys) {
-                Exchange batchAnswer;
-                if (batchKey.equals(key)) {
-                    // skip the current aggregated key as we have already aggregated it and have the answer
-                    batchAnswer = answer;
-                } else {
-                    batchAnswer = aggregationRepository.get(camelContext, batchKey);
-                }
-
-                if (batchAnswer != null) {
-                    batchAnswer.setProperty(Exchange.AGGREGATED_COMPLETED_BY, complete);
-                    onCompletion(batchKey, originalExchange, batchAnswer, false);
-                    list.add(batchAnswer);
-                }
-            }
-            batchConsumerCorrelationKeys.clear();
-            // we have already submitted to completion, so answer should be null
-            answer = null;
-        } else if (answer != null) {
-            // we are complete for this exchange
-            answer.setProperty(Exchange.AGGREGATED_COMPLETED_BY, complete);
-            answer = onCompletion(key, originalExchange, answer, false);
-        }
-
         if (answer != null) {
             list.add(answer);
         }
+        return list;
     }
 
     protected void doAggregationRepositoryAdd(CamelContext camelContext, String key, Exchange oldExchange, Exchange newExchange) {
@@ -528,22 +395,6 @@ public class AggregateProcessor extends ServiceSupport implements AsyncProcessor
                       new Object[]{aggregationStrategy, oldExchange, newExchange});
             ((OptimisticLockingAwareAggregationStrategy)aggregationStrategy).onOptimisticLockFailure(oldExchange, newExchange);
         }
-    }
-
-    /**
-     * Tests whether the given exchanges is pre-complete or not
-     *
-     * @param key      the correlation key
-     * @param oldExchange   the existing exchange
-     * @param newExchange the incoming exchange
-     * @return <tt>null</tt> if not pre-completed, otherwise a String with the type that triggered the pre-completion
-     */
-    protected String isPreCompleted(String key, Exchange oldExchange, Exchange newExchange) {
-        boolean complete = false;
-        if (aggregationStrategy instanceof PreCompletionAwareAggregationStrategy) {
-            complete = ((PreCompletionAwareAggregationStrategy) aggregationStrategy).preComplete(oldExchange, newExchange);
-        }
-        return complete ? "strategy" : null;
     }
 
     /**
@@ -596,11 +447,6 @@ public class AggregateProcessor extends ServiceSupport implements AsyncProcessor
             }
         }
 
-        // not complete
-        return null;
-    }
-
-    protected void trackTimeout(String key, Exchange exchange) {
         // timeout can be either evaluated based on an expression or from a fixed value
         // expression takes precedence
         boolean timeoutSet = false;
@@ -623,17 +469,13 @@ public class AggregateProcessor extends ServiceSupport implements AsyncProcessor
             }
             addExchangeToTimeoutMap(key, exchange, getCompletionTimeout());
         }
+
+        // not complete
+        return null;
     }
 
     protected Exchange onAggregation(Exchange oldExchange, Exchange newExchange) {
         return aggregationStrategy.aggregate(oldExchange, newExchange);
-    }
-
-    protected boolean onPreCompletionAggregation(Exchange oldExchange, Exchange newExchange) {
-        if (aggregationStrategy instanceof PreCompletionAwareAggregationStrategy) {
-            return ((PreCompletionAwareAggregationStrategy) aggregationStrategy).preComplete(oldExchange, newExchange);
-        }
-        return false;
     }
 
     protected Exchange onCompletion(final String key, final Exchange original, final Exchange aggregated, boolean fromTimeout) {
@@ -652,7 +494,6 @@ public class AggregateProcessor extends ServiceSupport implements AsyncProcessor
 
         if (!fromTimeout && timeoutMap != null) {
             // cleanup timeout map if it was a incoming exchange which triggered the timeout (and not the timeout checker)
-            LOG.trace("Removing correlation key {} from timeout", key);
             timeoutMap.remove(key);
         }
 
@@ -697,27 +538,6 @@ public class AggregateProcessor extends ServiceSupport implements AsyncProcessor
         // invoke the on completion callback
         if (aggregationStrategy instanceof CompletionAwareAggregationStrategy) {
             ((CompletionAwareAggregationStrategy) aggregationStrategy).onCompletion(exchange);
-        }
-
-        if (getStatistics().isStatisticsEnabled()) {
-            totalCompleted.incrementAndGet();
-
-            String completedBy = exchange.getProperty(Exchange.AGGREGATED_COMPLETED_BY, String.class);
-            if ("interval".equals(completedBy)) {
-                completedByInterval.incrementAndGet();
-            } else if ("timeout".equals(completedBy)) {
-                completedByTimeout.incrementAndGet();
-            } else if ("force".equals(completedBy)) {
-                completedByForce.incrementAndGet();
-            } else if ("consumer".equals(completedBy)) {
-                completedByBatchConsumer.incrementAndGet();
-            } else if ("predicate".equals(completedBy)) {
-                completedByPredicate.incrementAndGet();
-            } else if ("size".equals(completedBy)) {
-                completedBySize.incrementAndGet();
-            } else if ("strategy".equals(completedBy)) {
-                completedByStrategy.incrementAndGet();
-            }
         }
 
         // send this exchange
@@ -787,34 +607,6 @@ public class AggregateProcessor extends ServiceSupport implements AsyncProcessor
         // store the timeout value on the exchange as well, in case we need it later
         exchange.setProperty(Exchange.AGGREGATED_TIMEOUT, timeout);
         timeoutMap.put(key, exchange.getExchangeId(), timeout);
-    }
-
-    /**
-     * Current number of closed correlation keys in the memory cache
-     */
-    public int getClosedCorrelationKeysCacheSize() {
-        if (closedCorrelationKeys != null) {
-            return closedCorrelationKeys.size();
-        } else {
-            return 0;
-        }
-    }
-
-    /**
-     * Clear all the closed correlation keys stored in the cache
-     */
-    public void clearClosedCorrelationKeysCache() {
-        if (closedCorrelationKeys != null) {
-            closedCorrelationKeys.clear();
-        }
-    }
-
-    public AggregateProcessorStatistics getStatistics() {
-        return statistics;
-    }
-
-    public int getInProgressCompleteExchanges() {
-        return inProgressCompleteExchanges.size();
     }
 
     public Predicate getCompletionPredicate() {
@@ -897,10 +689,6 @@ public class AggregateProcessor extends ServiceSupport implements AsyncProcessor
         this.completionFromBatchConsumer = completionFromBatchConsumer;
     }
 
-    public boolean isCompleteAllOnStop() {
-        return completeAllOnStop;
-    }
-
     public ExceptionHandler getExceptionHandler() {
         return exceptionHandler;
     }
@@ -945,10 +733,6 @@ public class AggregateProcessor extends ServiceSupport implements AsyncProcessor
         this.forceCompletionOnStop = forceCompletionOnStop;
     }
 
-    public void setCompleteAllOnStop(boolean completeAllOnStop) {
-        this.completeAllOnStop = completeAllOnStop;
-    }
-
     public void setTimeoutCheckerExecutorService(ScheduledExecutorService timeoutCheckerExecutorService) {
         this.timeoutCheckerExecutorService = timeoutCheckerExecutorService;
     }
@@ -987,14 +771,6 @@ public class AggregateProcessor extends ServiceSupport implements AsyncProcessor
 
     public void setCorrelationExpression(Expression correlationExpression) {
         this.correlationExpression = correlationExpression;
-    }
-
-    public AggregateController getAggregateController() {
-        return aggregateController;
-    }
-
-    public void setAggregateController(AggregateController aggregateController) {
-        this.aggregateController = aggregateController;
     }
 
     /**
@@ -1049,15 +825,11 @@ public class AggregateProcessor extends ServiceSupport implements AsyncProcessor
         @Override
         public void purge() {
             // must acquire the shared aggregation lock to be able to purge
-            if (!optimisticLocking) {
-                lock.lock();
-            }
+            if (!optimisticLocking) { lock.lock(); }
             try {
                 super.purge();
             } finally {
-                if (!optimisticLocking) {
-                    lock.unlock();
-                }
+                if (!optimisticLocking) { lock.unlock(); }
             }
         }
 
@@ -1116,9 +888,7 @@ public class AggregateProcessor extends ServiceSupport implements AsyncProcessor
 
             if (keys != null && !keys.isEmpty()) {
                 // must acquire the shared aggregation lock to be able to trigger interval completion
-                if (!optimisticLocking) {
-                    lock.lock();
-                }
+                if (!optimisticLocking) { lock.lock(); }
                 try {
                     for (String key : keys) {
                         boolean stolenInterval = false;
@@ -1143,9 +913,7 @@ public class AggregateProcessor extends ServiceSupport implements AsyncProcessor
                         }
                     }
                 } finally {
-                    if (!optimisticLocking) {
-                        lock.unlock();
-                    }
+                    if (!optimisticLocking) { lock.unlock(); }
                 }
             }
 
@@ -1253,19 +1021,11 @@ public class AggregateProcessor extends ServiceSupport implements AsyncProcessor
 
     @Override
     protected void doStart() throws Exception {
-        if (aggregationStrategy instanceof PreCompletionAwareAggregationStrategy) {
-            preCompletion = true;
-            LOG.info("PreCompletionAwareAggregationStrategy detected. Aggregator {} is in pre-completion mode.", getId());
-        }
-
-        if (!preCompletion) {
-            // if not in pre completion mode then check we configured the completion required
-            if (getCompletionTimeout() <= 0 && getCompletionInterval() <= 0 && getCompletionSize() <= 0 && getCompletionPredicate() == null
-                    && !isCompletionFromBatchConsumer() && getCompletionTimeoutExpression() == null
-                    && getCompletionSizeExpression() == null) {
-                throw new IllegalStateException("At least one of the completions options"
-                        + " [completionTimeout, completionInterval, completionSize, completionPredicate, completionFromBatchConsumer] must be set");
-            }
+        if (getCompletionTimeout() <= 0 && getCompletionInterval() <= 0 && getCompletionSize() <= 0 && getCompletionPredicate() == null
+                && !isCompletionFromBatchConsumer() && getCompletionTimeoutExpression() == null
+                && getCompletionSizeExpression() == null) {
+            throw new IllegalStateException("At least one of the completions options"
+                    + " [completionTimeout, completionInterval, completionSize, completionPredicate, completionFromBatchConsumer] must be set");
         }
 
         if (getCloseCorrelationKeyOnCompletion() != null) {
@@ -1352,11 +1112,6 @@ public class AggregateProcessor extends ServiceSupport implements AsyncProcessor
             restoreTimeoutMapFromAggregationRepository();
             ServiceHelper.startService(timeoutMap);
         }
-
-        if (aggregateController == null) {
-            aggregateController = new DefaultAggregateController();
-        }
-        aggregateController.onStart(this);
     }
 
     @Override
@@ -1364,10 +1119,6 @@ public class AggregateProcessor extends ServiceSupport implements AsyncProcessor
         // note: we cannot do doForceCompletionOnStop from this doStop method
         // as this is handled in the prepareShutdown method which is also invoked when stopping a route
         // and is better suited for preparing to shutdown than this doStop method is
-
-        if (aggregateController != null) {
-            aggregateController.onStop(this);
-        }
 
         if (recoverService != null) {
             camelContext.getExecutorServiceManager().shutdown(recoverService);
@@ -1384,30 +1135,13 @@ public class AggregateProcessor extends ServiceSupport implements AsyncProcessor
     }
 
     @Override
-    public void prepareShutdown(boolean suspendOnly, boolean forced) {
+    public void prepareShutdown(boolean forced) {
         // we are shutting down, so force completion if this option was enabled
         // but only do this when forced=false, as that is when we have chance to
         // send out new messages to be routed by Camel. When forced=true, then
         // we have to shutdown in a hurry
         if (!forced && forceCompletionOnStop) {
             doForceCompletionOnStop();
-        }
-    }
-
-    @Override
-    public boolean deferShutdown(ShutdownRunningTask shutdownRunningTask) {
-        // not in use
-        return true;
-    }
-
-    @Override
-    public int getPendingExchangesSize() {
-        if (completeAllOnStop) {
-            // we want to regard all pending exchanges in the repo as inflight
-            Set<String> keys = getAggregationRepository().getKeys();
-            return keys != null ? keys.size() : 0;
-        } else {
-            return 0;
         }
     }
 
@@ -1450,38 +1184,6 @@ public class AggregateProcessor extends ServiceSupport implements AsyncProcessor
         super.doShutdown();
     }
 
-    public int forceCompletionOfGroup(String key) {
-        // must acquire the shared aggregation lock to be able to trigger force completion
-        int total = 0;
-
-        if (!optimisticLocking) {
-            lock.lock();
-        }
-        try {
-            Exchange exchange = aggregationRepository.get(camelContext, key);
-            if (exchange != null) {
-                total = 1;
-                LOG.trace("Force completion triggered for correlation key: {}", key);
-                // indicate it was completed by a force completion request
-                exchange.setProperty(Exchange.AGGREGATED_COMPLETED_BY, "force");
-                Exchange answer = onCompletion(key, exchange, exchange, false);
-                if (answer != null) {
-                    onSubmitCompletion(key, answer);
-                }
-            }
-        } finally {
-            if (!optimisticLocking) {
-                lock.unlock(); 
-            }
-        }
-        LOG.trace("Completed force completion of group {}", key);
-
-        if (total > 0) {
-            LOG.debug("Forcing completion of group {} with {} exchanges", key, total);
-        }
-        return total;
-    }
-
     public int forceCompletionOfAllGroups() {
 
         // only run if CamelContext has been fully started or is stopping
@@ -1499,9 +1201,7 @@ public class AggregateProcessor extends ServiceSupport implements AsyncProcessor
         int total = 0;
         if (keys != null && !keys.isEmpty()) {
             // must acquire the shared aggregation lock to be able to trigger force completion
-            if (!optimisticLocking) {
-                lock.lock(); 
-            }
+            if (!optimisticLocking) { lock.lock(); }
             total = keys.size();
             try {
                 for (String key : keys) {
@@ -1509,7 +1209,7 @@ public class AggregateProcessor extends ServiceSupport implements AsyncProcessor
                     if (exchange != null) {
                         LOG.trace("Force completion triggered for correlation key: {}", key);
                         // indicate it was completed by a force completion request
-                        exchange.setProperty(Exchange.AGGREGATED_COMPLETED_BY, "force");
+                        exchange.setProperty(Exchange.AGGREGATED_COMPLETED_BY, "forceCompletion");
                         Exchange answer = onCompletion(key, exchange, exchange, false);
                         if (answer != null) {
                             onSubmitCompletion(key, answer);
@@ -1517,9 +1217,7 @@ public class AggregateProcessor extends ServiceSupport implements AsyncProcessor
                     }
                 }
             } finally {
-                if (!optimisticLocking) {
-                    lock.unlock();
-                }
+                if (!optimisticLocking) { lock.unlock(); }
             }
         }
         LOG.trace("Completed force completion of all groups task");

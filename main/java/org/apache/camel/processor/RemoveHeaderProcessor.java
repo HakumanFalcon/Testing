@@ -21,16 +21,14 @@ import org.apache.camel.AsyncProcessor;
 import org.apache.camel.Exchange;
 import org.apache.camel.Message;
 import org.apache.camel.Traceable;
-import org.apache.camel.spi.IdAware;
 import org.apache.camel.support.ServiceSupport;
 import org.apache.camel.util.AsyncProcessorHelper;
 
 /**
  * A processor which removes the header from the IN or OUT message
  */
-public class RemoveHeaderProcessor extends ServiceSupport implements AsyncProcessor, Traceable, IdAware {
+public class RemoveHeaderProcessor extends ServiceSupport implements AsyncProcessor, Traceable {
     private final String headerName;
-    private String id;
 
     public RemoveHeaderProcessor(String headerName) {
         this.headerName = headerName;
@@ -60,18 +58,6 @@ public class RemoveHeaderProcessor extends ServiceSupport implements AsyncProces
 
     public String getTraceLabel() {
         return "removeHeader[" + headerName + "]";
-    }
-
-    public String getId() {
-        return id;
-    }
-
-    public void setId(String id) {
-        this.id = id;
-    }
-
-    public String getHeaderName() {
-        return headerName;
     }
 
     @Override
