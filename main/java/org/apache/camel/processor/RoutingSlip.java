@@ -41,6 +41,7 @@ import org.apache.camel.impl.ProducerCache;
 import org.apache.camel.spi.EndpointUtilizationStatistics;
 import org.apache.camel.spi.IdAware;
 import org.apache.camel.spi.RouteContext;
+import org.apache.camel.spi.UnitOfWork;
 import org.apache.camel.support.ServiceSupport;
 import org.apache.camel.util.AsyncProcessorHelper;
 import org.apache.camel.util.ExchangeHelper;
@@ -82,7 +83,7 @@ public class RoutingSlip extends ServiceSupport implements AsyncProcessor, Trace
      */
     static final class PreparedErrorHandler extends KeyValueHolder<RouteContext, Processor> {
 
-        PreparedErrorHandler(RouteContext key, Processor value) {
+        public PreparedErrorHandler(RouteContext key, Processor value) {
             super(key, value);
         }
 

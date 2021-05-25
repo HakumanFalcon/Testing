@@ -37,10 +37,8 @@ public class XsltComponent extends UriEndpointComponent {
 
     @Metadata(label = "advanced")
     private XmlConverter xmlConverter;
-    @Metadata(label = "advanced", description = "To use a custom UriResolver. Should not be used together with the option 'uriResolverFactory'.")
+    @Metadata(label = "advanced")
     private URIResolver uriResolver;
-    @Metadata(label = "advanced", description = "To use a custom UriResolver which depends on a dynamic endpoint resource URI. Should not be used together with the option 'uriResolver'.")
-    private XsltUriResolverFactory uriResolverFactory;
     @Metadata(defaultValue = "true")
     private boolean contentCache = true;
     private boolean saxon;
@@ -59,29 +57,13 @@ public class XsltComponent extends UriEndpointComponent {
     public void setXmlConverter(XmlConverter xmlConverter) {
         this.xmlConverter = xmlConverter;
     }
-    
-    
-
-    public XsltUriResolverFactory getUriResolverFactory() {
-        return uriResolverFactory;
-    }
-
-    /**
-     * To use a custom javax.xml.transform.URIResolver which depends on a dynamic endpoint resource URI or which is a subclass of {@link XsltUriResolver}.
-     *  Do not use in combination with uriResolver.
-     * See also {@link #setUriResolver(URIResolver)}.
-     */
-    public void setUriResolverFactory(XsltUriResolverFactory uriResolverFactory) {
-        this.uriResolverFactory = uriResolverFactory;
-    }
 
     public URIResolver getUriResolver() {
         return uriResolver;
     }
 
     /**
-     * To use a custom javax.xml.transform.URIResolver. Do not use in combination with uriResolverFactory.
-     * See also {@link #setUriResolverFactory(XsltUriResolverFactory)}.
+     * To use a custom javax.xml.transform.URIResolver
      */
     public void setUriResolver(URIResolver uriResolver) {
         this.uriResolver = uriResolver;
@@ -132,20 +114,10 @@ public class XsltComponent extends UriEndpointComponent {
         if (resolver == null) {
             // not in endpoint then use component specific resolver
             resolver = getUriResolver();
-        }       
+        }
         if (resolver == null) {
-            // lookup custom resolver factory to use
-            XsltUriResolverFactory resolverFactory = resolveAndRemoveReferenceParameter(parameters, "uriResolverFactory", XsltUriResolverFactory.class);
-            if (resolverFactory == null) {
-                // not in endpoint then use component specific resolver factory
-                resolverFactory = getUriResolverFactory();
-            }
-            if (resolverFactory == null) {
-                // fallback to use the Default URI resolver factory
-                resolverFactory = new DefaultXsltUriResolverFactory();
-            }
-            
-            resolver = resolverFactory.createUriResolver(getCamelContext(), remaining);
+            // fallback to use a Camel specific resolver
+            resolver = new XsltUriResolver(getCamelContext().getClassResolver(), remaining);
         }
         endpoint.setUriResolver(resolver);
 

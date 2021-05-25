@@ -31,6 +31,7 @@ public class PropertiesComponentLoadPropertiesFromFileTest extends PropertiesCom
         context.removeComponent("properties");
 
         PropertiesComponent pc = new PropertiesComponent();
+        pc.setCamelContext(context);
         pc.setLocations(new String[]{"file:./src/test/resources/org/apache/camel/component/properties/myproperties.properties"});
         context.addComponent("properties", pc);
 

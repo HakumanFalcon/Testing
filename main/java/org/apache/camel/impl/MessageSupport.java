@@ -36,12 +36,6 @@ public abstract class MessageSupport implements Message {
     private Object body;
     private String messageId;
 
-    @Override
-    public String toString() {
-        // do not output information about the message as it may contain sensitive information
-        return String.format("Message[%s]", messageId == null ? "" : messageId);
-    }
-
     public Object getBody() {
         if (body == null) {
             body = createBody();

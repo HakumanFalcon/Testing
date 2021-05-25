@@ -143,10 +143,12 @@ public class FilterParameters extends JsseParameters {
     @Override
     public String toString() {
         StringBuilder builder = new StringBuilder();
-        builder.append("FilterParameters[include=");
+        builder.append("FilterParameters [include=");
         builder.append(Arrays.toString(getInclude().toArray(new String[getInclude().size()])));
         builder.append(", exclude=");
         builder.append(Arrays.toString(getExclude().toArray(new String[getExclude().size()])));
+        builder.append(", getContext()=");
+        builder.append(getCamelContext());
         builder.append("]");
         return builder.toString();
     }

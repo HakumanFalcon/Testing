@@ -18,8 +18,6 @@ package org.apache.camel.converter.myconverter;
 
 import java.util.Currency;
 
-import org.apache.camel.CamelContext;
-import org.apache.camel.CamelContextAware;
 import org.apache.camel.Converter;
 import org.apache.camel.Exchange;
 import org.apache.camel.FallbackConverter;
@@ -29,24 +27,12 @@ import org.apache.camel.spi.TypeConverterRegistry;
  * @version 
  */
 @Converter
-public class InstanceDummyFallbackConverter implements CamelContextAware {
-
-    private CamelContext camelContext;
-
-    @Override
-    public CamelContext getCamelContext() {
-        return camelContext;
-    }
-
-    @Override
-    public void setCamelContext(CamelContext camelContext) {
-        this.camelContext = camelContext;
-    }
+public class InstanceDummyFallbackConverter {
 
     @FallbackConverter
     public Object convertTo(Class<?> type, Exchange exchange, Object value, TypeConverterRegistry registry) {
         if (Currency.class.isAssignableFrom(value.getClass())) {
-            return "Money talks says " + camelContext.getName();
+            return "Money talks";
         }
         return null;
     }

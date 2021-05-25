@@ -28,7 +28,7 @@ public class GenericFileMessageTest extends ContextTestSupport {
         GenericFileMessage<File> message = new GenericFileMessage<File>(); 
         assertStringContains(message.toString(), "org.apache.camel.component.file.GenericFileMessage@");
         
-        GenericFile<File> file = new GenericFile<File>(true);
+        GenericFile<File> file = new GenericFile<File>();
         file.setFileName("target/test.txt");
         file.setFile(new File("target/test.txt"));
         message = new GenericFileMessage<File>(file); 
@@ -37,11 +37,13 @@ public class GenericFileMessageTest extends ContextTestSupport {
     }
     
     public void testGenericFileContentType() throws Exception {
-        GenericFile<File> file = new GenericFile<File>(true);
+        GenericFileMessage<File> message = new GenericFileMessage<File>(); 
+        
+        GenericFile<File> file = new GenericFile<File>();
         file.setEndpointPath("target");
         file.setFileName("target");
         file.setFile(new File("target/camel-core-test.log"));
-        GenericFileMessage<File> message = new GenericFileMessage<File>(file);
+        message = new GenericFileMessage<File>(file); 
         file.populateHeaders(message);
         assertEquals("Get a wrong file content type", "txt", message.getHeader(Exchange.FILE_CONTENT_TYPE));
     }

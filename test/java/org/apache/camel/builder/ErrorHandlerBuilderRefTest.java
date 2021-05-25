@@ -66,7 +66,7 @@ public class ErrorHandlerBuilderRefTest extends ContextTestSupport {
 
         final String routeId;
 
-        TempRouteBuilder(String routeId) {
+        public TempRouteBuilder(String routeId) {
             this.routeId = routeId;
         }
 

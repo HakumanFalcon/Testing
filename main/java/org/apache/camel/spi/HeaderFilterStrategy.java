@@ -28,7 +28,7 @@ public interface HeaderFilterStrategy {
     /**
      * The direction is either <tt>IN</tt> or <tt>OUT</tt>.
      */
-    enum Direction {
+    public enum Direction {
         IN, OUT
     }
 

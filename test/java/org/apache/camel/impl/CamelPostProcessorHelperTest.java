@@ -468,7 +468,7 @@ public class CamelPostProcessorHelperTest extends ContextTestSupport {
         public void produceSomething(String body) throws Exception {
             assertEquals("Hello World", body);
 
-            Exchange exchange = producer.getEndpoint().createExchange();
+            Exchange exchange = producer.createExchange();
             exchange.addOnCompletion(mySynchronization);
             exchange.getIn().setBody(body);
             producer.process(exchange);

@@ -77,7 +77,7 @@ public class DefaultPropertiesParser implements AugmentedPropertyNameAwareProper
         private final String propertySuffix;
         private final boolean fallbackToUnaugmentedProperty;
 
-        ParsingContext(Properties properties, String prefixToken, String suffixToken, String propertyPrefix, String propertySuffix,
+        public ParsingContext(Properties properties, String prefixToken, String suffixToken, String propertyPrefix, String propertySuffix,
                               boolean fallbackToUnaugmentedProperty) {
             this.properties = properties;
             this.prefixToken = prefixToken;

@@ -14,22 +14,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.camel.impl;
+package org.apache.camel.component.bean.issues;
 
-import org.apache.camel.Exchange;
-import org.apache.camel.processor.DefaultExchangeFormatter;
+public abstract class SingleMethodAbstractService<S, T> implements SingleMethodService<S, T> {
 
-public class TraceExchangeFormatter extends DefaultExchangeFormatter {
-
-    private String message;
-
-    @Override
-    public String format(Exchange exchange) {
-        message = super.format(exchange);
-        return message;
+    public String hello() {
+        return "Hello World";
     }
 
-    public String getMessage() {
-        return message;
-    }
 }

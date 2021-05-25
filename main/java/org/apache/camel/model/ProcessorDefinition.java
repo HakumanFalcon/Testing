@@ -54,6 +54,7 @@ import org.apache.camel.model.language.ExpressionDefinition;
 import org.apache.camel.model.language.LanguageExpression;
 import org.apache.camel.model.language.SimpleExpression;
 import org.apache.camel.model.rest.RestDefinition;
+import org.apache.camel.processor.CamelInternalProcessor;
 import org.apache.camel.processor.InterceptEndpointProcessor;
 import org.apache.camel.processor.Pipeline;
 import org.apache.camel.processor.aggregate.AggregationStrategy;
@@ -200,7 +201,7 @@ public abstract class ProcessorDefinition<Type extends ProcessorDefinition<Type>
         }
 
         // validate that top-level is only added on the route (eg top level)
-        boolean parentIsRoute = RouteDefinition.class.isAssignableFrom(this.getClass());
+        boolean parentIsRoute = this.getClass().isAssignableFrom(RouteDefinition.class);
         if (output.isTopLevelOnly() && !parentIsRoute) {
             throw new IllegalArgumentException("The output must be added as top-level on the route. Try moving " + output + " to the top of route.");
         }
@@ -534,10 +535,16 @@ public abstract class ProcessorDefinition<Type extends ProcessorDefinition<Type>
             processor = createProcessor(routeContext);
         }
 
+        // unwrap internal processor so we can set id on the actual processor
+        Processor idProcessor = processor;
+        if (processor instanceof CamelInternalProcessor) {
+            idProcessor = ((CamelInternalProcessor) processor).getProcessor();
+        }
+
         // inject id
-        if (processor instanceof IdAware) {
+        if (idProcessor instanceof IdAware) {
             String id = this.idOrCreate(routeContext.getCamelContext().getNodeIdFactory());
-            ((IdAware) processor).setId(id);
+            ((IdAware) idProcessor).setId(id);
         }
 
         if (processor == null) {
@@ -2125,7 +2132,7 @@ public abstract class ProcessorDefinition<Type extends ProcessorDefinition<Type>
     /**
      * <a href="http://camel.apache.org/loop.html">Loop EIP:</a>
      * Creates a loop allowing to process the a message a number of times and possibly process them
-     * in a different way.
+     * in a different way. Useful mostly for testing.
      *
      * @param expression the loop expression
      * @return the builder
@@ -2138,22 +2145,8 @@ public abstract class ProcessorDefinition<Type extends ProcessorDefinition<Type>
 
     /**
      * <a href="http://camel.apache.org/loop.html">Loop EIP:</a>
-     * Creates a while loop allowing to process the a message while the predicate matches
-     * and possibly process them in a different way.
-     *
-     * @param predicate the while loop predicate
-     * @return the builder
-     */
-    public LoopDefinition loopDoWhile(Predicate predicate) {
-        LoopDefinition loop = new LoopDefinition(predicate);
-        addOutput(loop);
-        return loop;
-    }
-
-    /**
-     * <a href="http://camel.apache.org/loop.html">Loop EIP:</a>
      * Creates a loop allowing to process the a message a number of times and possibly process them
-     * in a different way.
+     * in a different way. Useful mostly for testing.
      *
      * @param count  the number of times
      * @return the builder
@@ -3283,9 +3276,7 @@ public abstract class ProcessorDefinition<Type extends ProcessorDefinition<Type>
      * @param aggregationStrategyRef Reference of aggregation strategy to aggregate input data and additional data.
      * @return the builder
      * @see org.apache.camel.processor.Enricher
-     * @deprecated use enrich with a <tt>ref:id</tt> as the resourceUri parameter.
      */
-    @Deprecated
     public Type enrichRef(String resourceRef, String aggregationStrategyRef) {
         return enrichRef(resourceRef, aggregationStrategyRef, false);
     }
@@ -3303,9 +3294,7 @@ public abstract class ProcessorDefinition<Type extends ProcessorDefinition<Type>
      *                               an exception was thrown.
      * @return the builder
      * @see org.apache.camel.processor.Enricher
-     * @deprecated use enrich with a <tt>ref:id</tt> as the resourceUri parameter.
      */
-    @Deprecated
     public Type enrichRef(String resourceRef, String aggregationStrategyRef, boolean aggregateOnException) {
         return enrichRef(resourceRef, aggregationStrategyRef, false, false);
     }
@@ -3324,9 +3313,7 @@ public abstract class ProcessorDefinition<Type extends ProcessorDefinition<Type>
      * @param shareUnitOfWork        whether to share unit of work
      * @return the builder
      * @see org.apache.camel.processor.Enricher
-     * @deprecated use enrich with a <tt>ref:id</tt> as the resourceUri parameter.
      */
-    @Deprecated
     @SuppressWarnings("unchecked")
     public Type enrichRef(String resourceRef, String aggregationStrategyRef, boolean aggregateOnException, boolean shareUnitOfWork) {
         EnrichDefinition answer = new EnrichDefinition();
@@ -3488,9 +3475,7 @@ public abstract class ProcessorDefinition<Type extends ProcessorDefinition<Type>
      * @param aggregationStrategyRef Reference of aggregation strategy to aggregate input data and additional data.
      * @return the builder
      * @see org.apache.camel.processor.PollEnricher
-     * @deprecated use pollEnrich with a <tt>ref:id</tt> as the resourceUri parameter.
      */
-    @Deprecated
     @SuppressWarnings("unchecked")
     public Type pollEnrichRef(String resourceRef, long timeout, String aggregationStrategyRef) {
         PollEnrichDefinition pollEnrich = new PollEnrichDefinition();
@@ -3520,9 +3505,7 @@ public abstract class ProcessorDefinition<Type extends ProcessorDefinition<Type>
      *                               an exception was thrown.
      * @return the builder
      * @see org.apache.camel.processor.PollEnricher
-     * @deprecated use pollEnrich with a <tt>ref:id</tt> as the resourceUri parameter.
      */
-    @Deprecated
     @SuppressWarnings("unchecked")
     public Type pollEnrichRef(String resourceRef, long timeout, String aggregationStrategyRef, boolean aggregateOnException) {
         PollEnrichDefinition pollEnrich = new PollEnrichDefinition();

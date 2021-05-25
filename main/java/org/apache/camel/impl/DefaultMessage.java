@@ -25,6 +25,7 @@ import javax.activation.DataHandler;
 import org.apache.camel.Exchange;
 import org.apache.camel.util.CaseInsensitiveMap;
 import org.apache.camel.util.EndpointHelper;
+import org.apache.camel.util.MessageHelper;
 
 /**
  * The default implementation of {@link org.apache.camel.Message}
@@ -40,6 +41,11 @@ public class DefaultMessage extends MessageSupport {
     private boolean fault;
     private Map<String, Object> headers;
     private Map<String, DataHandler> attachments;
+
+    @Override
+    public String toString() {
+        return MessageHelper.extractBodyForLogging(this);
+    }
 
     public boolean isFault() {
         return fault;

@@ -557,8 +557,6 @@ public class RestConfigurationDefinition {
 
     /**
      * For additional configuration options on component level
-     * <p/>
-     * The value can use <tt>#</tt> to refer to a bean to lookup in the registry.
      */
     public RestConfigurationDefinition componentProperty(String key, String value) {
         RestPropertyDefinition prop = new RestPropertyDefinition();
@@ -570,8 +568,6 @@ public class RestConfigurationDefinition {
 
     /**
      * For additional configuration options on endpoint level
-     * <p/>
-     * The value can use <tt>#</tt> to refer to a bean to lookup in the registry.
      */
     public RestConfigurationDefinition endpointProperty(String key, String value) {
         RestPropertyDefinition prop = new RestPropertyDefinition();
@@ -583,8 +579,6 @@ public class RestConfigurationDefinition {
 
     /**
      * For additional configuration options on consumer level
-     * <p/>
-     * The value can use <tt>#</tt> to refer to a bean to lookup in the registry.
      */
     public RestConfigurationDefinition consumerProperty(String key, String value) {
         RestPropertyDefinition prop = new RestPropertyDefinition();
@@ -596,8 +590,6 @@ public class RestConfigurationDefinition {
 
     /**
      * For additional configuration options on data format level
-     * <p/>
-     * The value can use <tt>#</tt> to refer to a bean to lookup in the registry.
      */
     public RestConfigurationDefinition dataFormatProperty(String key, String value) {
         RestPropertyDefinition prop = new RestPropertyDefinition();

@@ -48,7 +48,7 @@ public class TraceInterceptorSubclassFactory implements TraceInterceptorFactory 
         private boolean traceThisNode = true;
         private TraceInterceptorSubclassFactory factory;
 
-        TracerInterceptorSubclass(ProcessorDefinition<?> node, Processor target, TraceFormatter formatter,
+        public TracerInterceptorSubclass(ProcessorDefinition<?> node, Processor target, TraceFormatter formatter,
                                          Tracer tracer, List<StringBuilder> eventMessages, TraceInterceptorSubclassFactory factory) {
             super(node, target, formatter, tracer);
             this.eventMessages = eventMessages;

@@ -169,12 +169,6 @@ public class CamelLogger {
     }
 
     public static void log(Logger log, LoggingLevel level, Marker marker, String message) {
-        if (marker == null) {
-            log(log, level, message);
-            return;
-        }
-
-        // marker must be provided
         switch (level) {
         case DEBUG:
             log.debug(marker, message);
@@ -217,12 +211,6 @@ public class CamelLogger {
     }
 
     public static void log(Logger log, LoggingLevel level, Marker marker, String message, Throwable th) {
-        if (marker == null) {
-            log(log, level, message, th);
-            return;
-        }
-
-        // marker must be provided
         switch (level) {
         case DEBUG:
             log.debug(marker, message, th);

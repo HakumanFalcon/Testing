@@ -19,7 +19,6 @@ package org.apache.camel.component.direct;
 import org.apache.camel.Endpoint;
 import org.apache.camel.Processor;
 import org.apache.camel.ShutdownRunningTask;
-import org.apache.camel.Suspendable;
 import org.apache.camel.SuspendableService;
 import org.apache.camel.impl.DefaultConsumer;
 import org.apache.camel.spi.ShutdownAware;
@@ -29,7 +28,7 @@ import org.apache.camel.spi.ShutdownAware;
  *
  * @version 
  */
-public class DirectConsumer extends DefaultConsumer implements ShutdownAware, Suspendable {
+public class DirectConsumer extends DefaultConsumer implements ShutdownAware, SuspendableService {
 
     private DirectEndpoint endpoint;
 

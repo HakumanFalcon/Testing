@@ -73,12 +73,7 @@ public class TransactedDefinition extends OutputDefinition<TransactedDefinition>
 
     @Override
     public String toString() {
-        String desc = description();
-        if (ObjectHelper.isEmpty(desc)) {
-            return "Transacted";
-        } else {
-            return "Transacted[" + desc + "]";
-        }
+        return "Transacted[" + description() + "]";
     }
     
     protected String description() {
@@ -93,12 +88,7 @@ public class TransactedDefinition extends OutputDefinition<TransactedDefinition>
 
     @Override
     public String getLabel() {
-        String desc = description();
-        if (ObjectHelper.isEmpty(desc)) {
-            return "transacted";
-        } else {
-            return "transacted[" + desc + "]";
-        }
+        return "transacted[" + description() + "]";
     }
 
     @Override

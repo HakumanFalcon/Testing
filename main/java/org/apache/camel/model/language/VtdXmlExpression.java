@@ -23,16 +23,13 @@ import javax.xml.bind.annotation.XmlRootElement;
 import org.apache.camel.spi.Metadata;
 
 /**
- * For VTD-XML (fast and efficient XPath) expressions and predicates (requires using camel-vtdxml from Camel-Extra)
- *
- * @deprecated will be removed in next release
+ * For VTD-XML (fast and efficient XPath) expressions and predicates
  *
  * @version 
  */
 @Metadata(label = "language,xml", title = "VtdXML")
 @XmlRootElement(name = "vtdxml")
 @XmlAccessorType(XmlAccessType.FIELD)
-@Deprecated
 public class VtdXmlExpression extends NamespaceAwareExpression {
 
     public VtdXmlExpression() {

@@ -51,12 +51,12 @@ public class SubmitOrderedCompletionService<V> implements CompletionService<V> {
         // the id this task was assigned
         private final long id;
 
-        SubmitOrderFutureTask(long id, Callable<V> voidCallable) {
+        public SubmitOrderFutureTask(long id, Callable<V> voidCallable) {
             super(voidCallable);
             this.id = id;
         }
 
-        SubmitOrderFutureTask(long id, Runnable runnable, V result) {
+        public SubmitOrderFutureTask(long id, Runnable runnable, V result) {
             super(runnable, result);
             this.id = id;
         }

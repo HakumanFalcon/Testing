@@ -68,6 +68,9 @@ public class RestDefinition extends OptionalIdentifiedDefinition<RestDefinition>
     @XmlAttribute
     private Boolean enableCORS;
 
+    @XmlAttribute
+    private Boolean apiDocs;
+
     @XmlElementRef
     private List<VerbDefinition> verbs = new ArrayList<VerbDefinition>();
 
@@ -174,9 +177,22 @@ public class RestDefinition extends OptionalIdentifiedDefinition<RestDefinition>
         this.enableCORS = enableCORS;
     }
 
+    public Boolean getApiDocs() {
+        return apiDocs;
+    }
+
+    /**
+     * Whether to include or exclude the VerbDefinition in API documentation.
+     * This option will override what may be configured on a parent level
+     * <p/>
+     * The default value is true.
+     */
+    public void setApiDocs(Boolean apiDocs) {
+        this.apiDocs = apiDocs;
+    }
+
     // Fluent API
     //-------------------------------------------------------------------------
-
 
     /**
      * To set the base path of this REST service
@@ -456,6 +472,23 @@ public class RestDefinition extends OptionalIdentifiedDefinition<RestDefinition>
     }
 
     /**
+     * Include or exclude the current Rest Definition in API documentation.
+     * <p/>
+     * The default value is true.
+     */
+    public RestDefinition apiDocs(Boolean apiDocs) {
+        if (getVerbs().isEmpty()) {
+            this.apiDocs = apiDocs;
+        } else {
+            // add on last verb as that is how the Java DSL works
+            VerbDefinition verb = getVerbs().get(getVerbs().size() - 1);
+            verb.setApiDocs(apiDocs);
+        }
+
+        return this;
+    }
+
+    /**
      * Routes directly to the given static endpoint.
      * <p/>
      * If you need additional routing capabilities, then use {@link #route()} instead.
@@ -642,13 +675,6 @@ public class RestDefinition extends OptionalIdentifiedDefinition<RestDefinition>
             } else {
                 binding.setEnableCORS(getEnableCORS());
             }
-            // register all the default values for the query parameters
-            for (RestOperationParamDefinition param : verb.getParams()) {
-                if (RestParamType.query == param.getType() && param.getDefaultValue() != null) {
-                    binding.addDefaultValue(param.getName(), param.getDefaultValue());
-                }
-            }
-
             route.getOutputs().add(0, binding);
 
             // create the from endpoint uri which is using the rest component
@@ -727,17 +753,30 @@ public class RestDefinition extends OptionalIdentifiedDefinition<RestDefinition>
                 allPath = verb.getUri();
             }
 
-            // each {} is a parameter
+            // each {} is a parameter (url templating)
             String[] arr = allPath.split("\\/");
             for (String a : arr) {
+                // need to resolve property placeholders first
+                try {
+                    a = camelContext.resolvePropertyPlaceholders(a);
+                } catch (Exception e) {
+                    throw ObjectHelper.wrapRuntimeCamelException(e);
+                }
                 if (a.startsWith("{") && a.endsWith("}")) {
                     String key = a.substring(1, a.length() - 1);
                     //  merge if exists
                     boolean found = false;
                     for (RestOperationParamDefinition param : verb.getParams()) {
                         // name is mandatory
-                        ObjectHelper.notEmpty(param.getName(), "parameter name");
-                        if (param.getName().equalsIgnoreCase(key)) {
+                        String name = param.getName();
+                        ObjectHelper.notEmpty(name, "parameter name");
+                        // need to resolve property placeholders first
+                        try {
+                            name = camelContext.resolvePropertyPlaceholders(name);
+                        } catch (Exception e) {
+                            throw ObjectHelper.wrapRuntimeCamelException(e);
+                        }
+                        if (name.equalsIgnoreCase(key)) {
                             param.type(RestParamType.path);
                             found = true;
                             break;

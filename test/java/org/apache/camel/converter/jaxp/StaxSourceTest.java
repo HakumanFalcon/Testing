@@ -34,7 +34,7 @@ import org.apache.camel.impl.DefaultExchange;
 import static org.hamcrest.core.IsEqual.equalTo;
 import static org.junit.Assert.assertThat;
 
-public class StAX2SAXSourceTest extends ContextTestSupport {
+public class StaxSourceTest extends ContextTestSupport {
 
     private static final String TEST_XML = "<root xmlns=\"urn:org.apache.camel:test\">Text</root>";
 
@@ -49,7 +49,7 @@ public class StAX2SAXSourceTest extends ContextTestSupport {
         Exchange exchange = new DefaultExchange(context);
         exchange.setProperty(Exchange.CHARSET_NAME, UTF_8.toString());
         XMLStreamWriter writer = context.getTypeConverter().mandatoryConvertTo(XMLStreamWriter.class, exchange, baos);
-        StAX2SAXSource staxSource = new StAX2SAXSource(reader);
+        StaxSource staxSource = new StaxSource(reader);
         StreamSource templateSource = new StreamSource(getClass().getResourceAsStream("/xslt/common/copy.xsl"));
         Transformer transformer = trf.newTransformer(templateSource);
         log.info("Used transformer: {}", transformer.getClass().getName());

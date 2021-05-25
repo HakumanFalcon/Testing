@@ -32,7 +32,6 @@ import org.apache.camel.util.ServiceHelper;
  */
 public class DefaultScheduledPollConsumer extends ScheduledPollConsumer {
     private PollingConsumer pollingConsumer;
-    private int timeout;
 
     public DefaultScheduledPollConsumer(DefaultEndpoint defaultEndpoint, Processor processor) {
         super(defaultEndpoint, processor);
@@ -46,15 +45,7 @@ public class DefaultScheduledPollConsumer extends ScheduledPollConsumer {
         int messagesPolled = 0;
 
         while (isPollAllowed()) {
-            Exchange exchange;
-            if (timeout == 0) {
-                exchange = pollingConsumer.receiveNoWait();
-            } else if (timeout < 0) {
-                exchange = pollingConsumer.receive();
-            } else {
-                exchange = pollingConsumer.receive(timeout);
-            }
-
+            Exchange exchange = pollingConsumer.receiveNoWait();
             if (exchange == null) {
                 break;
             }
@@ -74,24 +65,6 @@ public class DefaultScheduledPollConsumer extends ScheduledPollConsumer {
         }
 
         return messagesPolled;
-    }
-
-    public int getTimeout() {
-        return timeout;
-    }
-
-    /**
-     * Sets a timeout to use with {@link PollingConsumer}.
-     * <br/>
-     * <br/>Use <tt>timeout < 0</tt> for {@link PollingConsumer#receive()}.
-     * <br/>Use <tt>timeout == 0</tt> for {@link PollingConsumer#receiveNoWait()}.
-     * <br/>Use <tt>timeout > 0</tt> for {@link PollingConsumer#receive(long)}}.
-     * <br/> The default timeout value is <tt>0</tt>
-     *
-     * @param timeout the timeout value
-     */
-    public void setTimeout(int timeout) {
-        this.timeout = timeout;
     }
 
     @Override

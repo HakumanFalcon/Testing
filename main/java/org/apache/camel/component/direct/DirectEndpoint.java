@@ -31,9 +31,10 @@ import org.apache.camel.spi.UriPath;
 import org.apache.camel.util.ObjectHelper;
 
 /**
- * The direct component provides direct, synchronous call to another endpoint from the same CamelContext.
+ * Represents a direct endpoint that synchronously invokes the consumer of the
+ * endpoint when a producer sends a message to it.
  *
- * This endpoint can be used to connect existing routes in the same CamelContext.
+ * @version 
  */
 @UriEndpoint(scheme = "direct", title = "Direct", syntax = "direct:name", consumerClass = DirectConsumer.class, label = "core,endpoint")
 public class DirectEndpoint extends DefaultEndpoint {

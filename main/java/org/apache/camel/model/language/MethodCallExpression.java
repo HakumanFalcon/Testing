@@ -268,7 +268,6 @@ public class MethodCallExpression extends ExpressionDefinition {
 
     @Override
     public String toString() {
-        boolean isRef = bean != null || ref != null;
-        return "bean[" + (isRef ? "ref:" : "") + beanName() + (method != null ? " method:" + method : "") + "]";
+        return "bean{" + beanName() + (method != null ? ", method=" + method : "") + "}";
     }
 }

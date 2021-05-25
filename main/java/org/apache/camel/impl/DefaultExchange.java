@@ -80,8 +80,7 @@ public final class DefaultExchange implements Exchange {
 
     @Override
     public String toString() {
-        // do not output information about the message as it may contain sensitive information
-        return String.format("Exchange[%s]", exchangeId == null ? "" : exchangeId);
+        return String.format("Exchange[%s][%s]", exchangeId == null ? "" : exchangeId, out == null ? in : out);
     }
 
     public Exchange copy() {

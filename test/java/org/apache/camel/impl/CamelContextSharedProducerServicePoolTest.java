@@ -33,7 +33,7 @@ public class CamelContextSharedProducerServicePoolTest extends ContextTestSuppor
         private boolean start;
         private boolean stop;
 
-        MyProducer(Endpoint endpoint) throws Exception {
+        public MyProducer(Endpoint endpoint) throws Exception {
             super(endpoint);
             start();
         }

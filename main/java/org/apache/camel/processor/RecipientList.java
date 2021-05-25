@@ -166,8 +166,16 @@ public class RecipientList extends ServiceSupport implements AsyncProcessor, IdA
             return true;
         }
 
+        AsyncProcessor target = rlp;
+        if (isShareUnitOfWork()) {
+            // wrap answer in a sub unit of work, since we share the unit of work
+            CamelInternalProcessor internalProcessor = new CamelInternalProcessor(rlp);
+            internalProcessor.addAdvice(new CamelInternalProcessor.SubUnitOfWorkProcessorAdvice());
+            target = internalProcessor;
+        }
+
         // now let the multicast process the exchange
-        return rlp.process(exchange, callback);
+        return target.process(exchange, callback);
     }
 
     protected Endpoint resolveEndpoint(Exchange exchange, Object recipient) {

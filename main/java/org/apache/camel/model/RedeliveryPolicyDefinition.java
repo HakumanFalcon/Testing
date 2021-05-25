@@ -74,8 +74,6 @@ public class RedeliveryPolicyDefinition {
     @XmlAttribute
     private String logExhaustedMessageHistory;
     @XmlAttribute
-    private String logExhaustedMessageBody;
-    @XmlAttribute
     private String disableRedelivery;
     @XmlAttribute
     private String delayPattern;
@@ -151,9 +149,6 @@ public class RedeliveryPolicyDefinition {
             }
             if (logExhaustedMessageHistory != null) {
                 answer.setLogExhaustedMessageHistory(CamelContextHelper.parseBoolean(context, logExhaustedMessageHistory));
-            }
-            if (logExhaustedMessageBody != null) {
-                answer.setLogExhaustedMessageBody(CamelContextHelper.parseBoolean(context, logExhaustedMessageBody));
             }
             if (disableRedelivery != null) {
                 if (CamelContextHelper.parseBoolean(context, disableRedelivery)) {
@@ -501,30 +496,6 @@ public class RedeliveryPolicyDefinition {
     }
 
     /**
-     * Sets whether exhausted message body should be logged including message history or not (supports property placeholders).
-     * Can be used to include or reduce verbose. Requires <tt>logExhaustedMessageHistory</tt> to be enabled.
-     *
-     * @param logExhaustedMessageBody  whether exhausted message body should be logged with message history
-     * @return the builder
-     */
-    public RedeliveryPolicyDefinition logExhaustedMessageBody(boolean logExhaustedMessageBody) {
-        setLogExhaustedMessageBody(Boolean.toString(logExhaustedMessageBody));
-        return this;
-    }
-
-    /**
-     * Sets whether exhausted message body should be logged including message history or not (supports property placeholders).
-     * Can be used to include or reduce verbose. Requires <tt>logExhaustedMessageHistory</tt> to be enabled.
-     *
-     * @param logExhaustedMessageBody  whether exhausted message body should be logged with message history
-     * @return the builder
-     */
-    public RedeliveryPolicyDefinition logExhaustedMessageBody(String logExhaustedMessageBody) {
-        setLogExhaustedMessageBody(logExhaustedMessageBody);
-        return this;
-    }
-
-    /**
      * Sets the maximum redeliveries
      * <ul>
      *   <li>x = redeliver at most x times</li>
@@ -775,14 +746,6 @@ public class RedeliveryPolicyDefinition {
 
     public void setLogExhaustedMessageHistory(String logExhaustedMessageHistory) {
         this.logExhaustedMessageHistory = logExhaustedMessageHistory;
-    }
-
-    public String getLogExhaustedMessageBody() {
-        return logExhaustedMessageBody;
-    }
-
-    public void setLogExhaustedMessageBody(String logExhaustedMessageBody) {
-        this.logExhaustedMessageBody = logExhaustedMessageBody;
     }
 
     public String getDisableRedelivery() {

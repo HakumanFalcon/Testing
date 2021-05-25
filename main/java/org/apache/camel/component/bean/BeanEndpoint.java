@@ -30,7 +30,9 @@ import org.apache.camel.spi.UriParam;
 import org.apache.camel.spi.UriPath;
 
 /**
- * The <a href="http://camel.apache.org/bean.html">bean component</a> is for invoking Java beans from Camel.
+ * Endpoint for the bean component.
+ *
+ * @version 
  */
 @UriEndpoint(scheme = "bean", title = "Bean", syntax = "bean:beanName", producerOnly = true, label = "core,java")
 public class BeanEndpoint extends DefaultEndpoint {
@@ -47,7 +49,7 @@ public class BeanEndpoint extends DefaultEndpoint {
             + "true means the message body should be an array of parameters. Note: This option is used internally by Camel, and is not intended for end users to use.")
     @Deprecated
     private boolean multiParameterArray;
-    @UriParam(prefix = "bean.", label = "advanced", description = "Used for configuring additional properties on the bean", multiValue = true)
+    @UriParam(label = "advanced", description = "Used for configuring additional properties on the bean")
     private Map<String, Object> parameters;
 
     public BeanEndpoint() {

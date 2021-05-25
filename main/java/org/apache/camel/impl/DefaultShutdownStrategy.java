@@ -40,7 +40,6 @@ import org.apache.camel.Route;
 import org.apache.camel.Service;
 import org.apache.camel.ShutdownRoute;
 import org.apache.camel.ShutdownRunningTask;
-import org.apache.camel.Suspendable;
 import org.apache.camel.SuspendableService;
 import org.apache.camel.spi.InflightRepository;
 import org.apache.camel.spi.RouteStartupOrder;
@@ -507,7 +506,7 @@ public class DefaultShutdownStrategy extends ServiceSupport implements ShutdownS
         private final TimeUnit timeUnit;
         private final AtomicBoolean timeoutOccurred;
 
-        ShutdownTask(CamelContext context, List<RouteStartupOrder> routes, long timeout, TimeUnit timeUnit,
+        public ShutdownTask(CamelContext context, List<RouteStartupOrder> routes, long timeout, TimeUnit timeUnit,
                             boolean suspendOnly, boolean abortAfterTimeout, AtomicBoolean timeoutOccurred) {
             this.context = context;
             this.routes = routes;
@@ -558,7 +557,7 @@ public class DefaultShutdownStrategy extends ServiceSupport implements ShutdownS
                         if (consumer instanceof ShutdownAware) {
                             shutdown = !((ShutdownAware) consumer).deferShutdown(shutdownRunningTask);
                         }
-                        if (shutdown && consumer instanceof Suspendable) {
+                        if (shutdown && consumer instanceof SuspendableService) {
                             // we prefer to suspend over shutdown
                             suspend = true;
                         }

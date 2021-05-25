@@ -60,7 +60,7 @@ public class ServicePoolAwareLeakyTest extends ContextTestSupport {
 
         private final String uri;
 
-        LeakySieveEndpoint(String uri) {
+        public LeakySieveEndpoint(String uri) {
             this.uri = uri;
         }
 
@@ -90,7 +90,7 @@ public class ServicePoolAwareLeakyTest extends ContextTestSupport {
      */
     private static class LeakySieveProducer extends DefaultProducer implements ServicePoolAware {
 
-        LeakySieveProducer(Endpoint endpoint) {
+        public LeakySieveProducer(Endpoint endpoint) {
             super(endpoint);
         }
 

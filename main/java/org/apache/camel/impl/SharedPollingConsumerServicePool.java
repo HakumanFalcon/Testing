@@ -16,7 +16,6 @@
  */
 package org.apache.camel.impl;
 
-import org.apache.camel.NonManagedService;
 import org.apache.camel.ShutdownableService;
 import org.apache.camel.StaticService;
 
@@ -26,7 +25,7 @@ import org.apache.camel.StaticService;
  *
  * @version 
  */
-public class SharedPollingConsumerServicePool extends DefaultPollingConsumerServicePool implements ShutdownableService, StaticService, NonManagedService {
+public class SharedPollingConsumerServicePool extends DefaultPollingConsumerServicePool implements ShutdownableService, StaticService {
 
     public SharedPollingConsumerServicePool() {
     }

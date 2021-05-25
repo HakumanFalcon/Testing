@@ -16,17 +16,13 @@
  */
 package org.apache.camel.model.rest;
 
-import java.util.ArrayList;
-import java.util.List;
 import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;
 import javax.xml.bind.annotation.XmlAttribute;
-import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlRootElement;
 import javax.xml.bind.annotation.XmlTransient;
 
 import org.apache.camel.spi.Metadata;
-import org.apache.camel.util.ObjectHelper;
 
 /**
  * To specify the rest operation response messages using Swagger.
@@ -52,21 +48,15 @@ public class RestOperationResponseMsgDefinition {
     @Metadata(defaultValue = "")
     private String responseModel;
 
-    @XmlElement(name = "header")
-    private List<RestOperationResponseHeaderDefinition> headers;
-
     public RestOperationResponseMsgDefinition(VerbDefinition verb) {
-        this();
         this.verb = verb;
     }
 
     public RestOperationResponseMsgDefinition() {
-        this.code = "200";
-        this.message = "success";
     }
 
     public String getCode() {
-        return code;
+        return code != null ? code : "200";
     }
 
     public void setCode(String code) {
@@ -82,19 +72,11 @@ public class RestOperationResponseMsgDefinition {
     }
 
     public String getMessage() {
-        return message;
+        return message != null ? message : "success";
     }
 
     public void setMessage(String message) {
         this.message = message;
-    }
-
-    public List<RestOperationResponseHeaderDefinition> getHeaders() {
-        return headers;
-    }
-
-    public void setHeaders(List<RestOperationResponseHeaderDefinition> headers) {
-        this.headers = headers;
     }
 
     /**
@@ -131,25 +113,9 @@ public class RestOperationResponseMsgDefinition {
     }
 
     /**
-     * Adds a response header
-     */
-    public RestOperationResponseHeaderDefinition header(String name) {
-        if (headers == null) {
-            headers = new ArrayList<RestOperationResponseHeaderDefinition>();
-        }
-        RestOperationResponseHeaderDefinition header = new RestOperationResponseHeaderDefinition(this);
-        header.setName(name);
-        headers.add(header);
-        return header;
-    }
-
-    /**
      * Ends the configuration of this response message
      */
     public RestDefinition endResponseMessage() {
-        // code and message is mandatory
-        ObjectHelper.notEmpty(code, "code");
-        ObjectHelper.notEmpty(message, "message");
         verb.getResponseMsgs().add(this);
         return verb.getRest();
     }

@@ -97,7 +97,7 @@ public class PojoProduceInterceptEndpointTest extends TestCase {
         Producer producer;
 
         public Object doSomething(String body) throws Exception {
-            Exchange exchange = producer.getEndpoint().createExchange();
+            Exchange exchange = producer.createExchange();
             exchange.getIn().setBody(body);
             producer.process(exchange);
             return exchange.hasOut() ? exchange.getOut().getBody() : exchange.getIn().getBody();

@@ -172,25 +172,25 @@ public class XMLTokenExpressionIterator extends ExpressionAdapter implements Nam
 
         private Object nextToken;
         
-        XMLTokenIterator(String path, Map<String, String> nsmap, char mode, InputStream in, String charset) 
+        public XMLTokenIterator(String path, Map<String, String> nsmap, char mode, InputStream in, String charset) 
             throws XMLStreamException, UnsupportedEncodingException {
             // woodstox's getLocation().etCharOffset() does not return the offset correctly for InputStream, so use Reader instead.
             this(path, nsmap, mode, 1, new InputStreamReader(in, charset));
             this.originalInputStream = in;
         }
 
-        XMLTokenIterator(String path, Map<String, String> nsmap, char mode, int group, InputStream in, String charset) 
+        public XMLTokenIterator(String path, Map<String, String> nsmap, char mode, int group, InputStream in, String charset) 
             throws XMLStreamException, UnsupportedEncodingException {
             // woodstox's getLocation().etCharOffset() does not return the offset correctly for InputStream, so use Reader instead.
             this(path, nsmap, mode, group, new InputStreamReader(in, charset));
             this.originalInputStream = in;
         }
 
-        XMLTokenIterator(String path, Map<String, String> nsmap, char mode, Reader in) throws XMLStreamException {
+        public XMLTokenIterator(String path, Map<String, String> nsmap, char mode, Reader in) throws XMLStreamException {
             this(path, nsmap, mode, 1, in);
         }
 
-        XMLTokenIterator(String path, Map<String, String> nsmap, char mode, int group, Reader in) throws XMLStreamException {
+        public XMLTokenIterator(String path, Map<String, String> nsmap, char mode, int group, Reader in) throws XMLStreamException {
             final String[] sl = path.substring(1).split("/");
             this.splitpath = new AttributedQName[sl.length];
             for (int i = 0; i < sl.length; i++) {
@@ -611,17 +611,17 @@ public class XMLTokenExpressionIterator extends ExpressionAdapter implements Nam
         private Pattern lcpattern;
         private boolean nsany;
         
-        AttributedQName(String localPart) {
+        public AttributedQName(String localPart) {
             super(localPart);
             checkWildcard("", localPart);
         }
 
-        AttributedQName(String namespaceURI, String localPart, String prefix) {
+        public AttributedQName(String namespaceURI, String localPart, String prefix) {
             super(namespaceURI, localPart, prefix);
             checkWildcard(namespaceURI, localPart);
         }
 
-        AttributedQName(String namespaceURI, String localPart) {
+        public AttributedQName(String namespaceURI, String localPart) {
             super(namespaceURI, localPart);
             checkWildcard(namespaceURI, localPart);
         }

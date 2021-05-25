@@ -35,7 +35,7 @@ class ElementComparator<E> implements SequenceElementComparator<Element<E>> {
      * 
      * @param comparator a sequence element comparator this comparator delegates to.
      */
-    ElementComparator(SequenceElementComparator<E> comparator) {
+    public ElementComparator(SequenceElementComparator<E> comparator) {
         this.comparator = comparator;
     }
     

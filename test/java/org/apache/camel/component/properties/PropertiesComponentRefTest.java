@@ -88,6 +88,7 @@ public class PropertiesComponentRefTest extends ContextTestSupport {
         CamelContext context = super.createCamelContext();
 
         PropertiesComponent pc = new PropertiesComponent();
+        pc.setCamelContext(context);
         pc.setLocations(new String[]{"ref:myCoolProperties"});
         context.addComponent("properties", pc);
 

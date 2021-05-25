@@ -40,6 +40,7 @@ public class CustomProducerServicePoolTest extends ContextTestSupport {
     private static final class MyEndpoint extends DefaultEndpoint {
 
         private MyEndpoint(String endpointUri, CamelContext camelContext) {
+            // FIXME: another endpoint that works without a Component
             setCamelContext(camelContext);
             setEndpointUri(endpointUri);
         }
@@ -64,7 +65,7 @@ public class CustomProducerServicePoolTest extends ContextTestSupport {
 
     private static final class MyProducer extends DefaultProducer implements ServicePoolAware {
 
-        MyProducer(Endpoint endpoint) {
+        public MyProducer(Endpoint endpoint) {
             super(endpoint);
         }
 

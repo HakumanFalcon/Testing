@@ -30,6 +30,7 @@ import org.apache.camel.Route;
 import org.apache.camel.StatefulService;
 import org.apache.camel.StreamCache;
 import org.apache.camel.api.management.PerformanceCounter;
+import org.apache.camel.impl.DefaultMessageHistory;
 import org.apache.camel.management.DelegatePerformanceCounter;
 import org.apache.camel.management.mbean.ManagedPerformanceCounter;
 import org.apache.camel.model.ProcessorDefinition;
@@ -38,7 +39,6 @@ import org.apache.camel.processor.interceptor.BacklogDebugger;
 import org.apache.camel.processor.interceptor.BacklogTracer;
 import org.apache.camel.processor.interceptor.DefaultBacklogTracerEventMessage;
 import org.apache.camel.spi.InflightRepository;
-import org.apache.camel.spi.MessageHistoryFactory;
 import org.apache.camel.spi.RouteContext;
 import org.apache.camel.spi.RoutePolicy;
 import org.apache.camel.spi.StreamCachingStrategy;
@@ -271,10 +271,9 @@ public class CamelInternalProcessor extends DelegateAsyncProcessor {
         // determine if we can still run, or the camel context is forcing a shutdown
         boolean forceShutdown = exchange.getContext().getShutdownStrategy().forceShutdown(this);
         if (forceShutdown) {
-            String msg = "Run not allowed as ShutdownStrategy is forcing shutting down, will reject executing exchange: " + exchange;
-            LOG.debug(msg);
+            LOG.debug("Run not allowed as ShutdownStrategy is forcing shutting down, will reject executing exchange: {}", exchange);
             if (exchange.getException() == null) {
-                exchange.setException(new RejectedExecutionException(msg));
+                exchange.setException(new RejectedExecutionException());
             }
             return false;
         }
@@ -711,12 +710,10 @@ public class CamelInternalProcessor extends DelegateAsyncProcessor {
     @SuppressWarnings("unchecked")
     public static class MessageHistoryAdvice implements CamelInternalProcessorAdvice<MessageHistory> {
 
-        private final MessageHistoryFactory factory;
         private final ProcessorDefinition<?> definition;
         private final String routeId;
 
-        public MessageHistoryAdvice(MessageHistoryFactory factory, ProcessorDefinition<?> definition) {
-            this.factory = factory;
+        public MessageHistoryAdvice(ProcessorDefinition<?> definition) {
             this.definition = definition;
             this.routeId = ProcessorDefinitionHelper.getRouteId(definition);
         }
@@ -728,7 +725,7 @@ public class CamelInternalProcessor extends DelegateAsyncProcessor {
                 list = new ArrayList<MessageHistory>();
                 exchange.setProperty(Exchange.MESSAGE_HISTORY, list);
             }
-            MessageHistory history = factory.newMessageHistory(routeId, definition, new Date());
+            MessageHistory history = new DefaultMessageHistory(routeId, definition, new Date());
             list.add(history);
             return history;
         }

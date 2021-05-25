@@ -34,7 +34,7 @@ public class RestConfiguration {
     }
 
     public enum RestHostNameResolver {
-        allLocalIp, localIp, localHostName
+        localIp, localHostName
     }
 
     private String component;
@@ -47,7 +47,7 @@ public class RestConfiguration {
     private String apiContextRouteId;
     private String apiContextIdPattern;
     private boolean apiContextListing;
-    private RestHostNameResolver restHostNameResolver = RestHostNameResolver.allLocalIp;
+    private RestHostNameResolver restHostNameResolver = RestHostNameResolver.localHostName;
     private RestBindingMode bindingMode = RestBindingMode.off;
     private boolean skipBindingOnErrorCode = true;
     private boolean enableCORS;

@@ -44,6 +44,7 @@ public class TrustManagersParametersTest extends AbstractJsseParametersTest {
     }
     
     public void testPropertyPlaceholders() throws Exception {
+        
         CamelContext context = this.createPropertiesPlaceholderAwareContext();
         
         KeyStoreParameters ksp = new KeyStoreParameters();
@@ -64,19 +65,7 @@ public class TrustManagersParametersTest extends AbstractJsseParametersTest {
         TrustManager[] tms = tmp.createTrustManagers();
         validateTrustManagers(tms);
     }
-
-    public void testCustomTrustManager() throws Exception {
-        TrustManager myTm = new TrustManager() {
-            // noop
-        };
-
-        TrustManagersParameters tmp = new TrustManagersParameters();
-        tmp.setTrustManager(myTm);
-
-        TrustManager[] tms = tmp.createTrustManagers();
-        assertSame(myTm, tms[0]);
-    }
-
+    
     public void testCreateTrustManagers() throws Exception {
         TrustManagersParameters tmp = this.createMinimalTrustManagersParameters();
         

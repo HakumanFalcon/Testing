@@ -17,6 +17,7 @@
 package org.apache.camel.language.simple;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import org.apache.camel.ExchangeTestSupport;

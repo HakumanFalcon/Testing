@@ -24,8 +24,6 @@ import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
-import org.apache.camel.Rejectable;
-
 /**
  * Thread pool executor that creates {@link RejectableFutureTask} instead of
  * {@link java.util.concurrent.FutureTask} when registering new tasks for execution.
@@ -78,20 +76,12 @@ public class RejectableThreadPoolExecutor extends ThreadPoolExecutor {
 
     @Override
     protected <T> RunnableFuture<T> newTaskFor(Runnable runnable, T value) {
-        if (runnable instanceof Rejectable) {
-            return new RejectableFutureTask<T>(runnable, value);
-        } else {
-            return super.newTaskFor(runnable, value);
-        }
+        return new RejectableFutureTask<T>(runnable, value);
     }
 
     @Override
     protected <T> RunnableFuture<T> newTaskFor(Callable<T> callable) {
-        if (callable instanceof Rejectable) {
-            return new RejectableFutureTask<T>(callable);
-        } else {
-            return super.newTaskFor(callable);
-        }
+        return new RejectableFutureTask<T>(callable);
     }
 
     @Override

@@ -104,12 +104,6 @@ public class ExpressionBuilderTest extends TestSupport {
         assertEquals("Get a wrong properties size", properties.size(), 1);
     }
 
-    public void testParseSimpleOrFallbackToConstantExpression() throws Exception {
-        assertEquals("world", parseSimpleOrFallbackToConstantExpression("world", camelContext).evaluate(exchange, String.class));
-        assertEquals("Hello there!", parseSimpleOrFallbackToConstantExpression("${body}", camelContext).evaluate(exchange, String.class));
-        assertEquals("Hello there!", parseSimpleOrFallbackToConstantExpression("$simple{body}", camelContext).evaluate(exchange, String.class));
-    }
-
     @Override
     protected void setUp() throws Exception {
         super.setUp();

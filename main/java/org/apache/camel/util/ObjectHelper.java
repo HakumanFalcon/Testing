@@ -666,30 +666,8 @@ public final class ObjectHelper {
      * @param allowEmptyValues  whether to allow empty values
      * @return the iterator
      */
-    public static Iterator<Object> createIterator(Object value, String delimiter, boolean allowEmptyValues) {
-        return createIterable(value, delimiter, allowEmptyValues, false).iterator();
-    }
-
-    /**
-     * Creates an iterator over the value if the value is a collection, an
-     * Object[], a String with values separated by the given delimiter,
-     * or a primitive type array; otherwise to simplify the caller's
-     * code, we just create a singleton collection iterator over a single value
-     *
-     * </p> In case of primitive type arrays the returned {@code Iterator} iterates
-     * over the corresponding Java primitive wrapper objects of the given elements
-     * inside the {@code value} array. That's we get an autoboxing of the primitive
-     * types here for free as it's also the case in Java language itself.
-     *
-     * @param value             the value
-     * @param delimiter         delimiter for separating String values
-     * @param allowEmptyValues  whether to allow empty values
-     * @param pattern           whether the delimiter is a pattern
-     * @return the iterator
-     */
-    public static Iterator<Object> createIterator(Object value, String delimiter,
-                                                  boolean allowEmptyValues, boolean pattern) {
-        return createIterable(value, delimiter, allowEmptyValues, pattern).iterator();
+    public static Iterator<Object> createIterator(Object value, String delimiter, final boolean allowEmptyValues) {
+        return createIterable(value, delimiter, allowEmptyValues).iterator();
     }
 
     /**
@@ -706,35 +684,11 @@ public final class ObjectHelper {
      * @param value             the value
      * @param delimiter         delimiter for separating String values
      * @param allowEmptyValues  whether to allow empty values
-     * @return the iterable
-     * @see java.lang.Iterable
-     */
-    public static Iterable<Object> createIterable(Object value, String delimiter,
-                                                  final boolean allowEmptyValues) {
-        return createIterable(value, delimiter, allowEmptyValues, false);
-    }
-
-    /**
-     * Creates an iterable over the value if the value is a collection, an
-     * Object[], a String with values separated by the given delimiter,
-     * or a primitive type array; otherwise to simplify the caller's
-     * code, we just create a singleton collection iterator over a single value
-     *
-     * </p> In case of primitive type arrays the returned {@code Iterable} iterates
-     * over the corresponding Java primitive wrapper objects of the given elements
-     * inside the {@code value} array. That's we get an autoboxing of the primitive
-     * types here for free as it's also the case in Java language itself.
-     *
-     * @param value             the value
-     * @param delimiter         delimiter for separating String values
-     * @param allowEmptyValues  whether to allow empty values
-     * @param pattern           whether the delimiter is a pattern
      * @return the iterable
      * @see java.lang.Iterable
      */
     @SuppressWarnings("unchecked")
-    public static Iterable<Object> createIterable(Object value, String delimiter,
-                                                  final boolean allowEmptyValues, final boolean pattern) {
+    public static Iterable<Object> createIterable(Object value, String delimiter, final boolean allowEmptyValues) {
 
         // if its a message than we want to iterate its body
         if (value instanceof Message) {
@@ -815,8 +769,8 @@ public final class ObjectHelper {
 
             // this code is optimized to only use a Scanner if needed, eg there is a delimiter
 
-            if (delimiter != null && (pattern || s.contains(delimiter))) {
-                // use a scanner if it contains the delimiter or is a pattern
+            if (delimiter != null && s.contains(delimiter)) {
+                // use a scanner if it contains the delimiter
                 final Scanner scanner = new Scanner((String)value);
 
                 if (DEFAULT_DELIMITER.equals(delimiter)) {
@@ -1328,7 +1282,12 @@ public final class ObjectHelper {
             }
         } else {
             if (!source.getReturnType().isAssignableFrom(target.getReturnType())) {
-                return false;
+                boolean b1 = source.isBridge();
+                boolean b2 = target.isBridge();
+                // must not be bridge methods
+                if (!b1 && !b2) {
+                    return false;
+                }
             }
         }
 
@@ -1345,7 +1304,12 @@ public final class ObjectHelper {
                 }
             } else {
                 if (!(source.getParameterTypes()[i].isAssignableFrom(target.getParameterTypes()[i]))) {
-                    return false;
+                    boolean b1 = source.isBridge();
+                    boolean b2 = target.isBridge();
+                    // must not be bridge methods
+                    if (!b1 && !b2) {
+                        return false;
+                    }
                 }
             }
         }

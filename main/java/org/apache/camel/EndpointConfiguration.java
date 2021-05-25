@@ -37,7 +37,7 @@ public interface EndpointConfiguration {
     /**
      * {@link org.apache.camel.spi.DataFormat} operations.
      */
-    enum UriFormat {
+    public enum UriFormat {
         Canonical, Provider, Consumer, Complete
     }
 

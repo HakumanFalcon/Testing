@@ -35,15 +35,12 @@ import org.apache.camel.model.dataformat.CsvDataFormat;
 import org.apache.camel.model.dataformat.CustomDataFormat;
 import org.apache.camel.model.dataformat.GzipDataFormat;
 import org.apache.camel.model.dataformat.HL7DataFormat;
-import org.apache.camel.model.dataformat.HessianDataFormat;
 import org.apache.camel.model.dataformat.IcalDataFormat;
 import org.apache.camel.model.dataformat.JacksonXMLDataFormat;
 import org.apache.camel.model.dataformat.JaxbDataFormat;
 import org.apache.camel.model.dataformat.JibxDataFormat;
 import org.apache.camel.model.dataformat.JsonDataFormat;
 import org.apache.camel.model.dataformat.JsonLibrary;
-import org.apache.camel.model.dataformat.LZFDataFormat;
-import org.apache.camel.model.dataformat.MimeMultipartDataFormat;
 import org.apache.camel.model.dataformat.PGPDataFormat;
 import org.apache.camel.model.dataformat.ProtobufDataFormat;
 import org.apache.camel.model.dataformat.RssDataFormat;
@@ -56,8 +53,6 @@ import org.apache.camel.model.dataformat.XMLBeansDataFormat;
 import org.apache.camel.model.dataformat.XMLSecurityDataFormat;
 import org.apache.camel.model.dataformat.XStreamDataFormat;
 import org.apache.camel.model.dataformat.XmlJsonDataFormat;
-import org.apache.camel.model.dataformat.YAMLDataFormat;
-import org.apache.camel.model.dataformat.YAMLLibrary;
 import org.apache.camel.model.dataformat.ZipDataFormat;
 import org.apache.camel.model.dataformat.ZipFileDataFormat;
 import org.apache.camel.util.CollectionStringBuffer;
@@ -243,13 +238,6 @@ public class DataFormatClause<T extends ProcessorDefinition<?>> {
     }
 
     /**
-     * Uses the Hessian data format
-     */
-    public T hessian() {
-        return dataFormat(new HessianDataFormat());
-    }
-
-    /**
      * Uses the HL7 data format
      */
     public T hl7() {
@@ -281,97 +269,6 @@ public class DataFormatClause<T extends ProcessorDefinition<?>> {
         IcalDataFormat ical = new IcalDataFormat();
         ical.setValidating(validating);
         return dataFormat(ical);
-    }
-
-    /**
-     * Uses the LZF deflater data format
-     */
-    public T lzf() {
-        LZFDataFormat lzfdf = new LZFDataFormat();
-        return dataFormat(lzfdf);
-    }
-
-    /**
-     * Uses the MIME Multipart data format
-     */
-    public T mimeMultipart() {
-        MimeMultipartDataFormat mm = new MimeMultipartDataFormat();
-        return dataFormat(mm);
-    }
-
-    /**
-     * Uses the MIME Multipart data format
-     *
-     * @param multipartSubType Specifies the subtype of the MIME Multipart
-     */
-    public T mimeMultipart(String multipartSubType) {
-        MimeMultipartDataFormat mm = new MimeMultipartDataFormat();
-        mm.setMultipartSubType(multipartSubType);
-        return dataFormat(mm);
-    }
-
-    /**
-     * Uses the MIME Multipart data format
-     *
-     * @param multipartSubType           the subtype of the MIME Multipart
-     * @param multipartWithoutAttachment defines whether a message without attachment is also marshaled
-     *                                   into a MIME Multipart (with only one body part).
-     * @param headersInline              define the MIME Multipart headers as part of the message body
-     *                                   or as Camel headers
-     * @param binaryContent              have binary encoding for binary content (true) or use Base-64
-     *                                   encoding for binary content (false)
-     */
-    public T mimeMultipart(String multipartSubType, boolean multipartWithoutAttachment, boolean headersInline,
-                           boolean binaryContent) {
-        MimeMultipartDataFormat mm = new MimeMultipartDataFormat();
-        mm.setMultipartSubType(multipartSubType);
-        mm.setMultipartWithoutAttachment(multipartWithoutAttachment);
-        mm.setHeadersInline(headersInline);
-        mm.setBinaryContent(binaryContent);
-        return dataFormat(mm);
-    }
-
-    /**
-     * Uses the MIME Multipart data format
-     *
-     * @param multipartSubType           the subtype of the MIME Multipart
-     * @param multipartWithoutAttachment defines whether a message without attachment is also marshaled
-     *                                   into a MIME Multipart (with only one body part).
-     * @param headersInline              define the MIME Multipart headers as part of the message body
-     *                                   or as Camel headers
-     * @param includeHeadeers            if headersInline is set to true all camel headers matching this
-     *                                   regex are also stored as MIME headers on the Multipart
-     * @param binaryContent              have binary encoding for binary content (true) or use Base-64
-     *                                   encoding for binary content (false)
-     */
-    public T mimeMultipart(String multipartSubType, boolean multipartWithoutAttachment, boolean headersInline,
-                           String includeHeaders, boolean binaryContent) {
-        MimeMultipartDataFormat mm = new MimeMultipartDataFormat();
-        mm.setMultipartSubType(multipartSubType);
-        mm.setMultipartWithoutAttachment(multipartWithoutAttachment);
-        mm.setHeadersInline(headersInline);
-        mm.setIncludeHeaders(includeHeaders);
-        mm.setBinaryContent(binaryContent);
-        return dataFormat(mm);
-    }
-
-    /**
-     * Uses the MIME Multipart data format
-     *
-     * @param multipartWithoutAttachment defines whether a message without attachment is also marshaled
-     *                                   into a MIME Multipart (with only one body part).
-     * @param headersInline              define the MIME Multipart headers as part of the message body
-     *                                   or as Camel headers
-     * @param binaryContent              have binary encoding for binary content (true) or use Base-64
-     *                                   encoding for binary content (false)
-     */
-    public T mimeMultipart(boolean multipartWithoutAttachment, boolean headersInline,
-                           boolean binaryContent) {
-        MimeMultipartDataFormat mm = new MimeMultipartDataFormat();
-        mm.setMultipartWithoutAttachment(multipartWithoutAttachment);
-        mm.setHeadersInline(headersInline);
-        mm.setBinaryContent(binaryContent);
-        return dataFormat(mm);
     }
 
     /**
@@ -878,25 +775,6 @@ public class DataFormatClause<T extends ProcessorDefinition<?>> {
             csb.append(clazz.getName());
         }
         return xstream(encoding, csb.toString());
-    }
-
-    /**
-     * Uses the YAML data format
-     *
-     * @param library the yaml library to use
-     */
-    public T yaml(YAMLLibrary library) {
-        return dataFormat(new YAMLDataFormat(library));
-    }
-
-    /**
-     * Uses the YAML data format
-     *
-     * @param type          the yaml type to use
-     * @param type          the type for json snakeyaml type
-     */
-    public T yaml(YAMLLibrary library, Class<?> type) {
-        return dataFormat(new YAMLDataFormat(library, type));
     }
 
     /**

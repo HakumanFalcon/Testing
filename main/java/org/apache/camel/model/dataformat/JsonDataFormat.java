@@ -40,8 +40,6 @@ import org.apache.camel.util.ObjectHelper;
 @XmlAccessorType(XmlAccessType.FIELD)
 public class JsonDataFormat extends DataFormatDefinition {
     @XmlAttribute
-    private String objectMapper;
-    @XmlAttribute
     private Boolean prettyPrint;
     @XmlAttribute @Metadata(defaultValue = "XStream")
     private JsonLibrary library = JsonLibrary.XStream;
@@ -80,17 +78,6 @@ public class JsonDataFormat extends DataFormatDefinition {
 
     public JsonDataFormat(JsonLibrary library) {
         this.library = library;
-    }
-
-    public String getObjectMapper() {
-        return objectMapper;
-    }
-
-    /**
-     * Lookup and use the existing ObjectMapper with the given id when using Jackson.
-     */
-    public void setObjectMapper(String objectMapper) {
-        this.objectMapper = objectMapper;
     }
 
     public Boolean getPrettyPrint() {
@@ -341,11 +328,6 @@ public class JsonDataFormat extends DataFormatDefinition {
 
     @Override
     protected void configureDataFormat(DataFormat dataFormat, CamelContext camelContext) {
-        if (objectMapper != null) {
-            // must be a reference value
-            String ref = objectMapper.startsWith("#") ? objectMapper : "#" + objectMapper;
-            setProperty(camelContext, dataFormat, "objectMapper", ref);
-        }
         if (unmarshalType != null) {
             setProperty(camelContext, dataFormat, "unmarshalType", unmarshalType);
         }

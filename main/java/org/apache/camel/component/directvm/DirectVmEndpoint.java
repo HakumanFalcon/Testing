@@ -27,9 +27,7 @@ import org.apache.camel.spi.UriParam;
 import org.apache.camel.spi.UriPath;
 
 /**
- * The direct-vm component provides direct, synchronous call to another endpoint from any CamelContext in the same JVM.
- *
- * This endpoint can be used to connect existing routes in the same JVM between different CamelContexts.
+ * The direct-vm endpoint.
  */
 @UriEndpoint(scheme = "direct-vm", title = "Direct VM", syntax = "direct-vm:name", consumerClass = DirectConsumer.class, label = "core,endpoint")
 public class DirectVmEndpoint extends DefaultEndpoint {

@@ -184,11 +184,11 @@ public class DefaultExchangeFormatterTest extends ContextTestSupport {
 
     private static class MyFuture extends FutureTask<String> {
 
-        MyFuture(Callable<String> callable) {
+        public MyFuture(Callable<String> callable) {
             super(callable);
         }
 
-        MyFuture(Runnable runnable, String o) {
+        public MyFuture(Runnable runnable, String o) {
             super(runnable, o);
         }
 

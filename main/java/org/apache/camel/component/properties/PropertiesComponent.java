@@ -90,7 +90,6 @@ public class PropertiesComponent extends UriEndpointComponent {
     private final Map<String, PropertiesFunction> functions = new HashMap<String, PropertiesFunction>();
     private PropertiesResolver propertiesResolver = new DefaultPropertiesResolver(this);
     private PropertiesParser propertiesParser = new DefaultPropertiesParser(this);
-    private boolean isDefaultCreated;
     private String[] locations;
     private boolean ignoreMissingLocation;
     private String encoding;
@@ -115,12 +114,7 @@ public class PropertiesComponent extends UriEndpointComponent {
         addFunction(new ServiceHostPropertiesFunction());
         addFunction(new ServicePortPropertiesFunction());
     }
-
-    public PropertiesComponent(boolean isDefaultCreated) {
-        this();
-        this.isDefaultCreated = isDefaultCreated;
-    }
-
+    
     public PropertiesComponent(String location) {
         this();
         setLocation(location);
@@ -217,7 +211,7 @@ public class PropertiesComponent extends UriEndpointComponent {
      * Is this component created as a default by {@link org.apache.camel.CamelContext} during starting up Camel.
      */
     public boolean isDefaultCreated() {
-        return isDefaultCreated;
+        return locations == null;
     }
 
     public String[] getLocations() {

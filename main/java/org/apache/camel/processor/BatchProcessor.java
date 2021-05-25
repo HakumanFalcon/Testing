@@ -24,7 +24,6 @@ import java.util.List;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
@@ -336,11 +335,11 @@ public class BatchProcessor extends ServiceSupport implements AsyncProcessor, Na
 
         private Queue<Exchange> queue;
         private Lock queueLock = new ReentrantLock();
-        private final AtomicBoolean exchangeEnqueued = new AtomicBoolean();
+        private boolean exchangeEnqueued;
         private final Queue<String> completionPredicateMatched = new ConcurrentLinkedQueue<String>();
         private Condition exchangeEnqueuedCondition = queueLock.newCondition();
 
-        BatchSender() {
+        public BatchSender() {
             super(camelContext.getExecutorServiceManager().resolveThreadName("Batch Sender"));
             this.queue = new LinkedList<Exchange>();
         }
@@ -373,7 +372,7 @@ public class BatchProcessor extends ServiceSupport implements AsyncProcessor, Na
             try {
                 do {
                     try {
-                        if (!exchangeEnqueued.get()) {
+                        if (!exchangeEnqueued) {
                             LOG.trace("Waiting for new exchange to arrive or batchTimeout to occur after {} ms.", batchTimeout);
                             exchangeEnqueuedCondition.await(batchTimeout, TimeUnit.MILLISECONDS);
                         }
@@ -384,7 +383,7 @@ public class BatchProcessor extends ServiceSupport implements AsyncProcessor, Na
                             id = completionPredicateMatched.poll();
                         }
 
-                        if (id != null || !exchangeEnqueued.get()) {
+                        if (id != null || !exchangeEnqueued) {
                             if (id != null) {
                                 LOG.trace("Collecting exchanges to be aggregated triggered by completion predicate");
                             } else {
@@ -392,7 +391,7 @@ public class BatchProcessor extends ServiceSupport implements AsyncProcessor, Na
                             }
                             drainQueueTo(collection, batchSize, id);
                         } else {
-                            exchangeEnqueued.set(false);
+                            exchangeEnqueued = false;
                             boolean drained = false;
                             while (isInBatchCompleted(queue.size())) {
                                 drained = true;
@@ -472,7 +471,7 @@ public class BatchProcessor extends ServiceSupport implements AsyncProcessor, Na
                     }
                 }
                 queue.add(exchange);
-                exchangeEnqueued.set(true);
+                exchangeEnqueued = true;
                 exchangeEnqueuedCondition.signal();
             } finally {
                 queueLock.unlock();

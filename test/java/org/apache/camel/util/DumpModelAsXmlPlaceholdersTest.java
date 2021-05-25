@@ -53,6 +53,7 @@ public class DumpModelAsXmlPlaceholdersTest extends ContextTestSupport {
     protected CamelContext createCamelContext() throws Exception {
         CamelContext context = super.createCamelContext();
         PropertiesComponent component = new PropertiesComponent();
+        component.setCamelContext(context);
         component.setLocation("classpath:org/apache/camel/component/properties/cheese.properties");
         context.addComponent("properties", component);
         return context;

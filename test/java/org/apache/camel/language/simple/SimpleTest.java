@@ -20,7 +20,6 @@ import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -1102,7 +1101,7 @@ public class SimpleTest extends LanguageTestSupport {
             assertExpression("${in.body.getLines[0]?.getRating}", "");
             fail("Should have thrown exception");
         } catch (RuntimeBeanExpressionException e) {
-            MethodNotFoundException cause = assertIsInstanceOf(MethodNotFoundException.class, e.getCause());
+            MethodNotFoundException cause = assertIsInstanceOf(MethodNotFoundException.class, e.getCause().getCause());
             assertEquals("getRating", cause.getMethodName());
         }
     }
@@ -1119,7 +1118,7 @@ public class SimpleTest extends LanguageTestSupport {
             assertExpression("${in.body.lines[0]?.rating}", "");
             fail("Should have thrown exception");
         } catch (RuntimeBeanExpressionException e) {
-            MethodNotFoundException cause = assertIsInstanceOf(MethodNotFoundException.class, e.getCause());
+            MethodNotFoundException cause = assertIsInstanceOf(MethodNotFoundException.class, e.getCause().getCause());
             assertEquals("rating", cause.getMethodName());
         }
     }
@@ -1144,8 +1143,8 @@ public class SimpleTest extends LanguageTestSupport {
             assertExpression("${in.body.getFriend.getFriend.getName}", "");
             fail("Should have thrown exception");
         } catch (RuntimeBeanExpressionException e) {
-            assertEquals("Failed to invoke method: .getFriend.getFriend.getName on org.apache.camel.language.simple.SimpleTest.Animal"
-                    + " due last method returned null and therefore cannot continue to invoke method .getName on a null instance", e.getMessage());
+            assertEquals("Failed to invoke method: .getFriend.getFriend.getName on null due to: java.lang.NullPointerException", e.getMessage());
+            assertIsInstanceOf(NullPointerException.class, e.getCause());
         }
     }
 
@@ -1170,8 +1169,8 @@ public class SimpleTest extends LanguageTestSupport {
             assertExpression("${in.body.friend.friend.name}", "");
             fail("Should have thrown exception");
         } catch (RuntimeBeanExpressionException e) {
-            assertEquals("Failed to invoke method: .friend.friend.name on org.apache.camel.language.simple.SimpleTest.Animal"
-                    + " due last method returned null and therefore cannot continue to invoke method .name on a null instance", e.getMessage());
+            assertEquals("Failed to invoke method: .friend.friend.name on null due to: java.lang.NullPointerException", e.getMessage());
+            assertIsInstanceOf(NullPointerException.class, e.getCause());
         }
     }
 
@@ -1444,63 +1443,7 @@ public class SimpleTest extends LanguageTestSupport {
         exchange.getIn().setBody("87444549697");
         assertPredicate("${body} regex '^(tel:\\+)(974)(44)(\\d+)|^(974)(44)(\\d+)'", false);
     }
-
-    public void testCollateEven() throws Exception {
-        List<Object> data = new ArrayList<Object>();
-        data.add("A");
-        data.add("B");
-        data.add("C");
-        data.add("D");
-        data.add("E");
-        data.add("F");
-        exchange.getIn().setBody(data);
-
-        Iterator it = (Iterator) evaluateExpression("${collate(3)}", null);
-        List chunk = (List) it.next();
-        List chunk2 = (List) it.next();
-        assertFalse(it.hasNext());
-
-        assertEquals(3, chunk.size());
-        assertEquals(3, chunk2.size());
-
-        assertEquals("A", chunk.get(0));
-        assertEquals("B", chunk.get(1));
-        assertEquals("C", chunk.get(2));
-        assertEquals("D", chunk2.get(0));
-        assertEquals("E", chunk2.get(1));
-        assertEquals("F", chunk2.get(2));
-    }
     
-    public void testCollateOdd() throws Exception {
-        List<Object> data = new ArrayList<Object>();
-        data.add("A");
-        data.add("B");
-        data.add("C");
-        data.add("D");
-        data.add("E");
-        data.add("F");
-        data.add("G");
-        exchange.getIn().setBody(data);
-
-        Iterator it = (Iterator) evaluateExpression("${collate(3)}", null);
-        List chunk = (List) it.next();
-        List chunk2 = (List) it.next();
-        List chunk3 = (List) it.next();
-        assertFalse(it.hasNext());
-
-        assertEquals(3, chunk.size());
-        assertEquals(3, chunk2.size());
-        assertEquals(1, chunk3.size());
-
-        assertEquals("A", chunk.get(0));
-        assertEquals("B", chunk.get(1));
-        assertEquals("C", chunk.get(2));
-        assertEquals("D", chunk2.get(0));
-        assertEquals("E", chunk2.get(1));
-        assertEquals("F", chunk2.get(2));
-        assertEquals("G", chunk3.get(0));
-    }
-
     public void testRandomExpression() throws Exception {
         int min = 1;
         int max = 10;

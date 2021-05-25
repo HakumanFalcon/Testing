@@ -16,6 +16,8 @@
  */
 package org.apache.camel.processor;
 
+import java.io.ByteArrayOutputStream;
+
 import org.apache.camel.AsyncCallback;
 import org.apache.camel.AsyncProcessor;
 import org.apache.camel.CamelContext;
@@ -23,7 +25,7 @@ import org.apache.camel.CamelContextAware;
 import org.apache.camel.Exchange;
 import org.apache.camel.Message;
 import org.apache.camel.Traceable;
-import org.apache.camel.converter.stream.OutputStreamBuilder;
+import org.apache.camel.converter.stream.CachedOutputStream;
 import org.apache.camel.spi.DataFormat;
 import org.apache.camel.spi.IdAware;
 import org.apache.camel.support.ServiceSupport;
@@ -55,7 +57,15 @@ public class MarshalProcessor extends ServiceSupport implements AsyncProcessor, 
 
         // if stream caching is enabled then use that so we can stream accordingly
         // for example to overflow to disk for big streams
-        OutputStreamBuilder osb = OutputStreamBuilder.withExchange(exchange);
+        CachedOutputStream cos;
+        ByteArrayOutputStream os;
+        if (exchange.getContext().getStreamCachingStrategy().isEnabled()) {
+            cos = new CachedOutputStream(exchange);
+            os = null;
+        } else {
+            cos = null;
+            os = new ByteArrayOutputStream();
+        }
 
         Message in = exchange.getIn();
         Object body = in.getBody();
@@ -66,8 +76,14 @@ public class MarshalProcessor extends ServiceSupport implements AsyncProcessor, 
         out.copyFrom(in);
 
         try {
-            dataFormat.marshal(exchange, body, osb);
-            out.setBody(osb.build());
+            if (cos != null) {
+                dataFormat.marshal(exchange, body, cos);
+                out.setBody(cos.newStreamCache());
+            } else {
+                dataFormat.marshal(exchange, body, os);
+                byte[] data = os.toByteArray();
+                out.setBody(data);
+            }
         } catch (Throwable e) {
             // remove OUT message, as an exception occurred
             exchange.setOut(null);

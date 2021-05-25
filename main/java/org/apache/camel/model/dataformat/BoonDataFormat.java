@@ -41,8 +41,6 @@ public class BoonDataFormat extends DataFormatDefinition {
     private String unmarshalTypeName;
     @XmlTransient
     private Class<?> unmarshalType;
-    @XmlAttribute
-    private Boolean useList;
 
     public BoonDataFormat() {
         super("boon");
@@ -74,17 +72,6 @@ public class BoonDataFormat extends DataFormatDefinition {
     public void setUnmarshalTypeName(String unmarshalTypeName) {
         this.unmarshalTypeName = unmarshalTypeName;
     }
-    
-    public boolean isUseList() {
-        return useList;
-    }
-
-    /**
-     * To unarmshal to a List of Map or a List of Pojo.
-     */
-    public void setUseList(boolean useList) {
-        this.useList = useList;
-    }  
 
     @Override
     protected DataFormat createDataFormat(RouteContext routeContext) {
@@ -102,9 +89,6 @@ public class BoonDataFormat extends DataFormatDefinition {
     protected void configureDataFormat(DataFormat dataFormat, CamelContext camelContext) {
         if (unmarshalType != null) {
             setProperty(camelContext, dataFormat, "unmarshalType", unmarshalType);
-        }
-        if (useList != null) {
-            setProperty(camelContext, dataFormat, "useList", useList);
         }
     }
 }

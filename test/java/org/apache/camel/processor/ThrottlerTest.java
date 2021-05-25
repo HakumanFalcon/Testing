@@ -18,23 +18,26 @@ package org.apache.camel.processor;
 
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
 
+import org.apache.camel.AsyncCallback;
 import org.apache.camel.ContextTestSupport;
 import org.apache.camel.builder.RouteBuilder;
 import org.apache.camel.component.mock.MockEndpoint;
+import org.apache.camel.impl.DefaultExchange;
+import org.apache.camel.processor.Throttler.TimeSlot;
+
+import static org.apache.camel.builder.Builder.constant;
 
 public class ThrottlerTest extends ContextTestSupport {
     private static final int INTERVAL = 500;
-    private static final int TOLERANCE = 50;
-    private static final int MESSAGE_COUNT = 9;
+    protected int messageCount = 9;
 
     protected boolean canTest() {
         // skip test on windows as it does not run well there
         return !isPlatform("windows");
     }
 
-    public void testSendLotsOfMessagesButOnly3GetThroughWithin2Seconds() throws Exception {
+    public void testSendLotsOfMessagesButOnly3GetThrough() throws Exception {
         if (!canTest()) {
             return;
         }
@@ -43,7 +46,7 @@ public class ThrottlerTest extends ContextTestSupport {
         resultEndpoint.expectedMessageCount(3);
         resultEndpoint.setResultWaitTime(2000);
 
-        for (int i = 0; i < MESSAGE_COUNT; i++) {
+        for (int i = 0; i < messageCount; i++) {
             template.sendBody("seda:a", "<message>" + i + "</message>");
         }
 
@@ -51,8 +54,8 @@ public class ThrottlerTest extends ContextTestSupport {
         // to check that the throttle really does kick in
         resultEndpoint.assertIsSatisfied();
     }
-
-    public void testSendLotsOfMessagesWithRejectExecution() throws Exception {
+    
+    public void testSendLotsOfMessagesWithRejctExecution() throws Exception {
         if (!canTest()) {
             return;
         }
@@ -81,8 +84,69 @@ public class ThrottlerTest extends ContextTestSupport {
         }
 
         MockEndpoint resultEndpoint = resolveMandatoryEndpoint("mock:result", MockEndpoint.class);
-        long elapsed = sendMessagesAndAwaitDelivery(MESSAGE_COUNT, "direct:a", MESSAGE_COUNT, resultEndpoint);
-        assertThrottlerTiming(elapsed, 1, INTERVAL, MESSAGE_COUNT);
+        resultEndpoint.expectedMessageCount(messageCount);
+
+        ExecutorService executor = Executors.newFixedThreadPool(messageCount);
+
+        long start = System.currentTimeMillis();
+        for (int i = 0; i < messageCount; i++) {
+            executor.execute(new Runnable() {
+                public void run() {
+                    template.sendBody("direct:a", "<message>payload</message>");
+                }
+            });
+        }
+
+        // let's wait for the exchanges to arrive
+        resultEndpoint.assertIsSatisfied();
+
+        // now assert that they have actually been throttled
+        long minimumTime = (messageCount - 1) * INTERVAL;
+        // add a little slack
+        long delta = System.currentTimeMillis() - start + 750;
+        assertTrue("Should take at least " + minimumTime + "ms, was: " + delta, delta >= minimumTime);
+        executor.shutdownNow();
+    }
+
+    public void testTimeSlotCalculus() throws Exception {
+        if (!canTest()) {
+            return;
+        }
+
+        Throttler throttler = new Throttler(context, null, constant(3), 1000, null, false, false);
+        // calculate will assign a new slot
+        throttler.calculateDelay(new DefaultExchange(context));
+        TimeSlot slot = throttler.nextSlot();
+        // start a new time slot
+        assertNotNull(slot);
+        // make sure the same slot is used (3 exchanges per slot)
+        assertSame(slot, throttler.nextSlot());
+        assertTrue(slot.isFull());
+        assertTrue(slot.isActive());
+
+        TimeSlot next = throttler.nextSlot();
+        // now we should have a new slot that starts somewhere in the future
+        assertNotSame(slot, next);
+        assertFalse(next.isActive());
+    }
+
+    public void testTimeSlotCalculusForPeriod() throws InterruptedException {
+        if (!canTest()) {
+            return;
+        }
+
+        Throttler throttler = new Throttler(context, null, constant(3), 1000, null, false, false);
+        throttler.calculateDelay(new DefaultExchange(context));
+
+        TimeSlot slot = throttler.getSlot();
+        assertNotNull(slot);
+        assertSame(slot, throttler.nextSlot());
+
+        // we've only used up two of three slots, but now we introduce a time delay
+        // so to make the slot not valid anymore
+        Thread.sleep((long) (1.5 * 1000));
+        assertFalse(slot.isActive());
+        assertNotSame(slot, throttler.nextSlot());
     }
 
     public void testConfigurationWithConstantExpression() throws Exception {
@@ -91,8 +155,28 @@ public class ThrottlerTest extends ContextTestSupport {
         }
 
         MockEndpoint resultEndpoint = resolveMandatoryEndpoint("mock:result", MockEndpoint.class);
-        long elapsed = sendMessagesAndAwaitDelivery(MESSAGE_COUNT, "direct:expressionConstant", MESSAGE_COUNT, resultEndpoint);
-        assertThrottlerTiming(elapsed, 1, INTERVAL, MESSAGE_COUNT);
+        resultEndpoint.expectedMessageCount(messageCount);
+
+        ExecutorService executor = Executors.newFixedThreadPool(messageCount);
+
+        long start = System.currentTimeMillis();
+        for (int i = 0; i < messageCount; i++) {
+            executor.execute(new Runnable() {
+                public void run() {
+                    template.sendBody("direct:expressionConstant", "<message>payload</message>");
+                }
+            });
+        }
+
+        // let's wait for the exchanges to arrive
+        resultEndpoint.assertIsSatisfied();
+
+        // now assert that they have actually been throttled
+        long minimumTime = (messageCount - 1) * INTERVAL;
+        // add a little slack
+        long delta = System.currentTimeMillis() - start + 200;
+        assertTrue("Should take at least " + minimumTime + "ms, was: " + delta, delta >= minimumTime);
+        executor.shutdownNow();
     }
 
     public void testConfigurationWithHeaderExpression() throws Exception {
@@ -101,14 +185,28 @@ public class ThrottlerTest extends ContextTestSupport {
         }
 
         MockEndpoint resultEndpoint = resolveMandatoryEndpoint("mock:result", MockEndpoint.class);
-        resultEndpoint.expectedMessageCount(MESSAGE_COUNT);
+        resultEndpoint.expectedMessageCount(messageCount);
 
-        ExecutorService executor = Executors.newFixedThreadPool(MESSAGE_COUNT);
-        try {
-            sendMessagesWithHeaderExpression(executor, resultEndpoint, 1, INTERVAL, MESSAGE_COUNT);
-        } finally {
-            executor.shutdownNow();
+        ExecutorService executor = Executors.newFixedThreadPool(messageCount);
+
+        long start = System.currentTimeMillis();
+        for (int i = 0; i < messageCount; i++) {
+            executor.execute(new Runnable() {
+                public void run() {
+                    template.sendBodyAndHeader("direct:expressionHeader", "<message>payload</message>", "throttleValue", 1);
+                }
+            });
         }
+
+        // let's wait for the exchanges to arrive
+        resultEndpoint.assertIsSatisfied();
+
+        // now assert that they have actually been throttled
+        long minimumTime = (messageCount - 1) * INTERVAL;
+        // add a little slack
+        long delta = System.currentTimeMillis() - start + 200;
+        assertTrue("Should take at least " + minimumTime + "ms, was: " + delta, delta >= minimumTime);
+        executor.shutdownNow();
     }
 
     public void testConfigurationWithChangingHeaderExpression() throws Exception {
@@ -116,103 +214,106 @@ public class ThrottlerTest extends ContextTestSupport {
             return;
         }
 
-        ExecutorService executor = Executors.newFixedThreadPool(5);
-        try {
-            MockEndpoint resultEndpoint = resolveMandatoryEndpoint("mock:result", MockEndpoint.class);
-            sendMessagesWithHeaderExpression(executor, resultEndpoint, 1, INTERVAL, MESSAGE_COUNT);
-            Thread.sleep(INTERVAL + TOLERANCE); // sleep here to ensure the first throttle rate does not influence the next one.
-
-            resultEndpoint.reset();
-            sendMessagesWithHeaderExpression(executor, resultEndpoint, 10, INTERVAL, MESSAGE_COUNT);
-            Thread.sleep(INTERVAL + TOLERANCE); // sleep here to ensure the first throttle rate does not influence the next one.
-
-            resultEndpoint.reset();
-            sendMessagesWithHeaderExpression(executor, resultEndpoint, 1, INTERVAL, MESSAGE_COUNT);
-            Thread.sleep(INTERVAL + TOLERANCE); // sleep here to ensure the first throttle rate does not influence the next one.
-
-            resultEndpoint.reset();
-            sendMessagesWithHeaderExpression(executor, resultEndpoint, 10, INTERVAL, MESSAGE_COUNT);
-        } finally {
-            executor.shutdownNow();
-        }
-    }
-
-    public void testHighThrottleRate() throws Exception {
-        if (!canTest()) {
-            return;
-        }
-
-        int messageCount = 20000;
+        ExecutorService executor = Executors.newFixedThreadPool(messageCount);
         MockEndpoint resultEndpoint = resolveMandatoryEndpoint("mock:result", MockEndpoint.class);
-        long elapsed = sendMessagesAndAwaitDelivery(messageCount, "direct:highThrottleRate", 5, resultEndpoint);
-        assertThrottlerTiming(elapsed, 1000, INTERVAL, messageCount);
+        sendMessagesWithHeaderExpression(executor, resultEndpoint, 1);
+
+        resultEndpoint.reset();
+        sendMessagesWithHeaderExpression(executor, resultEndpoint, 10);
+
+        resultEndpoint.reset();
+        sendMessagesWithHeaderExpression(executor, resultEndpoint, 1);
+
+        executor.shutdownNow();
     }
 
-    private void assertThrottlerTiming(final long elapsedTimeMs, final int throttle, final int intervalMs, final int messageCount) {
-        // now assert that they have actually been throttled (use +/- 50 as slack)
-        long minimum = calculateMinimum(intervalMs, throttle, messageCount) - 50;
-        long maximum = calculateMaximum(intervalMs, throttle, messageCount) + 50;
-        log.info("Sent {} exchanges in {}ms, with throttle rate of {} per {}ms. Calculated min {}ms and max {}ms", new Object[]{messageCount, elapsedTimeMs, throttle, intervalMs, minimum, maximum});
+    private void sendMessagesWithHeaderExpression(ExecutorService executor, MockEndpoint resultEndpoint, final int
+            throttle) throws InterruptedException {
 
-        assertTrue("Should take at least " + minimum + "ms, was: " + elapsedTimeMs, elapsedTimeMs >= minimum);
-        assertTrue("Should take at most " + maximum + "ms, was: " + elapsedTimeMs, elapsedTimeMs <= maximum + TOLERANCE);
-    }
-
-    private long sendMessagesAndAwaitDelivery(final int messageCount, final String endpointUri, final int threadPoolSize, final MockEndpoint receivingEndpoint) throws InterruptedException {
-        ExecutorService executor = Executors.newFixedThreadPool(threadPoolSize);
-        try {
-            if (receivingEndpoint != null) {
-                receivingEndpoint.expectedMessageCount(messageCount);
-            }
-
-            long start = System.nanoTime();
-            for (int i = 0; i < messageCount; i++) {
-                executor.execute(new Runnable() {
-                    public void run() {
-                        template.sendBody(endpointUri, "<message>payload</message>");
-                    }
-                });
-            }
-
-            // let's wait for the exchanges to arrive
-            if (receivingEndpoint != null) {
-                receivingEndpoint.assertIsSatisfied();
-            }
-            return TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - start);
-        } finally {
-            executor.shutdownNow();
-        }
-    }
-
-    private void sendMessagesWithHeaderExpression(final ExecutorService executor, final MockEndpoint resultEndpoint, final int throttle, final int intervalMs, final int messageCount)
-            throws InterruptedException {
         resultEndpoint.expectedMessageCount(messageCount);
 
-        long start = System.nanoTime();
+        long start = System.currentTimeMillis();
         for (int i = 0; i < messageCount; i++) {
             executor.execute(new Runnable() {
                 public void run() {
-                    template.sendBodyAndHeader("direct:expressionHeader", "<message>payload</message>", "throttleValue", throttle);
+                    template.sendBodyAndHeader("direct:expressionHeader", "<message>payload</message>", "throttleValue",
+                            throttle);
                 }
             });
         }
 
         // let's wait for the exchanges to arrive
         resultEndpoint.assertIsSatisfied();
-        long elapsed = TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - start);
-        assertThrottlerTiming(elapsed, throttle, intervalMs, messageCount);
+
+        // now assert that they have actually been throttled
+        long minimumTime = (messageCount - 1) * INTERVAL / throttle;
+        // add a little slack
+        long delta = System.currentTimeMillis() - start + 200;
+        assertTrue("Should take at least " + minimumTime + "ms, was: " + delta, delta >= minimumTime);
+        long maxTime = (messageCount - 1) * INTERVAL / throttle * 3;
+        assertTrue("Should take at most " + maxTime + "ms, was: " + delta, delta <= maxTime);
     }
 
-    private long calculateMinimum(final long periodMs, final long throttleRate, final long messageCount) {
-        if (messageCount % throttleRate > 0) {
-            return (long) Math.floor((double)messageCount / (double)throttleRate) * periodMs;
-        } else {
-            return (long) (Math.floor((double)messageCount / (double)throttleRate) * periodMs) - periodMs;
+    /*
+    Given: you have a throttler which rejects messages
+    Then:
+    Throttler should return an exception when calculating the delay or set the exception
+    on the exchange when processing the delay.
+     */
+    public void testWhenTimeSlotIsFullShouldReturnThrottlerRejectedExecutionException() {
+        if (!canTest()) {
+            return;
         }
+        Throttler throttler = new Throttler(context, null, constant(1), 1000, null, false, true);
+        AsyncCallback callback = new AsyncCallback() {
+            @Override
+            public void done(boolean doneSync) {
+
+            }
+        };
+        throttler.calculateDelay(new DefaultExchange(context));
+
+        boolean exceptionThrown = false;
+        DefaultExchange exchange = null;
+        try {
+            long delay = throttler.calculateDelay(new DefaultExchange(context));
+            exchange = new DefaultExchange(context);
+            throttler.processDelay(exchange,
+                    callback,
+                    delay);
+        } catch (ThrottlerRejectedExecutionException e) {
+            exceptionThrown = true;
+        }
+        assertTrue(exceptionThrown || exchange.getException().getClass() == ThrottlerRejectedExecutionException.class);
     }
 
-    private long calculateMaximum(final long periodMs, final long throttleRate, final long messageCount) {
-        return ((long)Math.ceil((double)messageCount / (double)throttleRate)) * periodMs;
+    /*
+       Given: you have a throttler which rejects messages after the first message
+       Then: the timeslot should be the original timeslot or the new timeslot should not be full
+     */
+    public void testRejectionOfExecutionShouldNotFillNextTimeSlot() {
+        if (!canTest()) {
+            return;
+        }
+        Throttler throttler = new Throttler(context, null, constant(1), 10000, null, false, true);
+        AsyncCallback callback = new AsyncCallback() {
+            @Override
+            public void done(boolean doneSync) {
+
+            }
+        };
+        throttler.calculateDelay(new DefaultExchange(context));
+        TimeSlot currentSlot = throttler.getSlot();
+        DefaultExchange exchange;
+        try {
+            long delay = throttler.calculateDelay(new DefaultExchange(context));
+            exchange = new DefaultExchange(context);
+            throttler.processDelay(exchange,
+                    callback,
+                    delay);
+        } catch (ThrottlerRejectedExecutionException ignore) {
+        }
+        assertTrue(currentSlot == throttler.getSlot() || !throttler.getSlot().isFull());
     }
 
     protected RouteBuilder createRouteBuilder() {
@@ -234,8 +335,6 @@ public class ThrottlerTest extends ContextTestSupport {
                 from("direct:expressionHeader").throttle(header("throttleValue")).timePeriodMillis(INTERVAL).to("log:result", "mock:result");
 
                 from("direct:start").throttle(2).timePeriodMillis(10000).rejectExecution(true).to("log:result", "mock:result");
-
-                from("direct:highThrottleRate").throttle(1000).timePeriodMillis(INTERVAL).to("mock:result");
             }
         };
     }

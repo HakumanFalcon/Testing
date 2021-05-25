@@ -147,7 +147,7 @@ public class EndpointMustBeStartedBeforeSendProcessorTest extends ContextTestSup
 
     private class MyProducer extends DefaultProducer {
 
-        MyProducer(Endpoint endpoint) {
+        public MyProducer(Endpoint endpoint) {
             super(endpoint);
         }
 
@@ -168,7 +168,7 @@ public class EndpointMustBeStartedBeforeSendProcessorTest extends ContextTestSup
 
     private class MyConsumer extends DefaultConsumer {
 
-        MyConsumer(Endpoint endpoint, Processor processor) {
+        public MyConsumer(Endpoint endpoint, Processor processor) {
             super(endpoint, processor);
         }
 

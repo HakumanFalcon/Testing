@@ -41,6 +41,7 @@ public class SimpleWithPropertiesTest {
         System.setProperty("test", "testValue");
         PropertiesComponent pc = new PropertiesComponent();
         CamelContext context = new DefaultCamelContext();
+        pc.setCamelContext(context);
         context.addComponent("properties", pc);
         
         // try to setup the property

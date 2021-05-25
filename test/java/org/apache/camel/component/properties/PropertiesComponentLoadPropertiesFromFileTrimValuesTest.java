@@ -57,6 +57,7 @@ public class PropertiesComponentLoadPropertiesFromFileTrimValuesTest extends Con
         fos.close();
 
         PropertiesComponent pc = new PropertiesComponent();
+        pc.setCamelContext(context);
         pc.setLocation("file:target/space/space.properties");
         context.addComponent("properties", pc);
 

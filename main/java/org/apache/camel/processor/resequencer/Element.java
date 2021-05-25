@@ -39,7 +39,7 @@ class Element<E> implements TimeoutHandler {
      * 
      * @param object contained object.
      */
-    Element(E object) {
+    public Element(E object) {
         this.object = object;
     }
     

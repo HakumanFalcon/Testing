@@ -89,47 +89,13 @@ public class FileOperations implements GenericFileOperations<File> {
         return file.exists();
     }
 
-    protected boolean buildDirectory(File dir, Set<PosixFilePermission> permissions) {
-        if (dir.exists()) {
-            return true;
-        }
-
-        if (permissions == null || permissions.isEmpty()) {
-            return dir.mkdirs();
-        }
-
-        // create directory one part of a time and set permissions
-        try {
-            String[] parts = dir.getPath().split("\\" + File.separatorChar);
-            File base = new File(".");
-            for (String part : parts) {
-                File subDir = new File(base, part);
-                if (!subDir.exists()) {
-                    if (subDir.mkdir()) {
-                        if (LOG.isTraceEnabled()) {
-                            LOG.trace("Setting chmod: {} on directory: {} ", PosixFilePermissions.toString(permissions), subDir);
-                        }
-                        Files.setPosixFilePermissions(subDir.toPath(), permissions);
-                    } else {
-                        return false;
-                    }
-                }
-                base = new File(base, subDir.getName());
-            }
-        } catch (IOException e) {
-            throw new GenericFileOperationFailedException("Error setting chmod on directory: " + dir, e);
-        }
-
-        return true;
-    }
-
     public boolean buildDirectory(String directory, boolean absolute) throws GenericFileOperationFailedException {
         ObjectHelper.notNull(endpoint, "endpoint");
 
         // always create endpoint defined directory
         if (endpoint.isAutoCreate() && !endpoint.getFile().exists()) {
             LOG.trace("Building starting directory: {}", endpoint.getFile());
-            buildDirectory(endpoint.getFile(), endpoint.getDirectoryPermissions());
+            endpoint.getFile().mkdirs();
         }
 
         if (ObjectHelper.isEmpty(directory)) {
@@ -165,8 +131,10 @@ public class FileOperations implements GenericFileOperations<File> {
                 // the directory already exists
                 return true;
             } else {
-                LOG.trace("Building directory: {}", path);
-                return buildDirectory(path, endpoint.getDirectoryPermissions());
+                if (LOG.isTraceEnabled()) {
+                    LOG.trace("Building directory: {}", path);
+                }
+                return path.mkdirs();
             }
         }
     }
@@ -278,10 +246,8 @@ public class FileOperations implements GenericFileOperations<File> {
                         if (ObjectHelper.isNotEmpty(endpoint.getChmod())) {
                             Set<PosixFilePermission> permissions = endpoint.getPermissions();
                             if (!permissions.isEmpty()) {
-                                if (LOG.isTraceEnabled()) {
-                                    LOG.trace("Setting chmod: {} on file: {} ", PosixFilePermissions.toString(permissions), file);
-                                }
                                 Files.setPosixFilePermissions(file.toPath(), permissions);
+                                LOG.trace("Setting chmod: {} on file: {} ", PosixFilePermissions.toString(permissions), file);
                             }
                         }
                         // clear header as we have renamed the file
@@ -299,10 +265,8 @@ public class FileOperations implements GenericFileOperations<File> {
                     if (ObjectHelper.isNotEmpty(endpoint.getChmod())) {
                         Set<PosixFilePermission> permissions = endpoint.getPermissions();
                         if (!permissions.isEmpty()) {
-                            if (LOG.isTraceEnabled()) {
-                                LOG.trace("Setting chmod: {} on file: {} ", PosixFilePermissions.toString(permissions), file);
-                            }
                             Files.setPosixFilePermissions(file.toPath(), permissions);
+                            LOG.trace("Setting chmod: {} on file: {} ", PosixFilePermissions.toString(permissions), file);
                         }
                     }
                     return true;
@@ -332,10 +296,8 @@ public class FileOperations implements GenericFileOperations<File> {
             if (ObjectHelper.isNotEmpty(endpoint.getChmod())) {
                 Set<PosixFilePermission> permissions = endpoint.getPermissions();
                 if (!permissions.isEmpty()) {
-                    if (LOG.isTraceEnabled()) {
-                        LOG.trace("Setting chmod: {} on file: {} ", PosixFilePermissions.toString(permissions), file);
-                    }
                     Files.setPosixFilePermissions(file.toPath(), permissions);
+                    LOG.trace("Setting chmod: {} on file: {} ", PosixFilePermissions.toString(permissions), file);
                 }
             }
 
